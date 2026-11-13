@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TMA Challenge — User Guide</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.6; }
+    .page { max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
+    .hero { background: #0b1f3a; border-radius: 14px; padding: 2rem; text-align: center; margin-bottom: 1.5rem; }
+    .hero-title { font-size: 26px; font-weight: 800; color: #f0c040; margin-bottom: 6px; }
+    .hero-sub { font-size: 14px; color: rgba(255,255,255,0.6); }
+    .card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+    .card-title { font-size: 15px; font-weight: 700; color: #0b1f3a; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+    ul { padding-left: 1.25rem; }
+    li { font-size: 14px; color: #334155; margin-bottom: 8px; line-height: 1.65; }
+    .badge { display: inline-block; background: #0b1f3a; color: #f0c040; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.04em; vertical-align: middle; margin-left: 4px; }
+    .new-badge { display: inline-block; background: #16a34a; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; letter-spacing: 0.04em; vertical-align: middle; margin-left: 6px; }
+    .updated { font-size: 11px; color: #94a3b8; text-align: right; margin-top: 1.5rem; }
+    @media (max-width: 480px) { .hero-title { font-size: 20px; } li { font-size: 13px; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="hero">
+      <div class="hero-title">TMA Challenge — User Guide</div>
+      <div class="hero-sub">Everything you need to know to compete · Updated June 14, 2026</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Overview</div>
+      <ul>
+        <li>TMA Challenge is a World Cup 2026 prediction competition covering all 48 teams, 12 groups, and the full knockout bracket.</li>
+        <li>There are two stages: Group Stage (picks before June 11) and Knockout (picks before the Round of 32 begins around July 1).</li>
+        <li>Your total score combines Group Stage and Knockout points. The leaderboard updates automatically as match results are entered.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Group Stage picks</div>
+      <ul>
+        <li>For each of the 72 group stage matches, pick Team 1, Draw, or Team 2. Picks save instantly on click — no save button needed.</li>
+        <li>The Group Stage tab opens in <strong>By Date view</strong> by default, showing today's matches at the top automatically. Switch to <em>By Group</em> using the toggle if you prefer browsing by group. <span class="new-badge">NEW</span></li>
+        <li>After picking all 6 matches in a group, 1st and 2nd place standings are auto-filled when clear. If teams are tied, a manual tiebreaker dropdown appears.</li>
+        <li>You must also pick the 8 best 3rd-place teams that you think will qualify for the Round of 32.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Group Stage scoring</div>
+      <ul>
+        <li>Correct match result (win/draw/loss): +1 point per match.</li>
+        <li>Correct group winner (1st place): +4 points.</li>
+        <li>Correct group runner-up (2nd place): +3 points.</li>
+        <li>Correct top-2 team but wrong position (picked 1st but finished 2nd, or vice versa): +2 points.</li>
+        <li>Each correct 3rd-place qualifier pick: +1 point (8 picks, max 8 bonus points). A team earns you +1 if they qualify for the Round of 32 in any position — 1st, 2nd, or as one of the best 8 3rd-place teams. The Results tab shows live group standings with ↑ R32 badges indicating who has qualified.</li>
+        <li>Deadline: All Group Stage picks lock before the first match on June 11, 2026.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Knockout picks</div>
+      <ul>
+        <li>The Knockout stage opens after the group stage and the full 32-team bracket is published.</li>
+        <li>Pick a winner for all 31 matches — Round of 32 through the Final. As you make picks, later rounds fill in dynamically based on your selections.</li>
+        <li>Knockout picks require pressing the Save button at the bottom. All 31 picks save together in one action.</li>
+        <li>Deadline: All 31 Knockout picks must be saved before the Round of 32 begins (around July 1, 2026). Picks lock at that point and cannot be changed.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Knockout scoring</div>
+      <ul>
+        <li>Round of 32 correct pick: +2 points.</li>
+        <li>Round of 16 correct pick: +4 points.</li>
+        <li>Quarterfinals correct pick: +6 points.</li>
+        <li>Semifinals correct pick: +8 points.</li>
+        <li>Final correct pick: +10 points.</li>
+        <li>A team must be in the match to earn points — if you picked a team that didn't make it that far, no points are awarded regardless of later results.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Leaderboard and tiebreakers</div>
+      <ul>
+        <li>The leaderboard ranks all participants by total points (Group Stage + Knockout), updating automatically as results are entered.</li>
+        <li>Your personal stats — rank, total points, Group Stage score, Knockout score — appear highlighted at the top of the leaderboard.</li>
+        <li>Tiebreaker: if two players have the same total points, the player with more correct picks (total right answers) ranks higher.</li>
+        <li>Click any player's row on the leaderboard (after Group Stage locks) to view their full picks with result feedback.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Results tab <span class="new-badge">UPDATED</span></div>
+      <ul>
+        <li>The Results tab shows all group stage and knockout match results as they are entered.</li>
+        <li>Group Stage results open in <strong>By Date view</strong> by default — today's matches appear at the top. Switch to <em>By Group</em> to see all matches for a specific group including the live standings table.</li>
+        <li>Group standings now appear <strong>above</strong> the match list for each group, showing points, goal difference, and R32 qualification status.</li>
+        <li>Drawn matches are highlighted with an amber <strong>DRAW</strong> badge so the result is easy to spot at a glance.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Insights <span class="new-badge">UPDATED</span></div>
+      <ul>
+        <li>The Insights tab unlocks after Group Stage picks are locked on June 11.</li>
+        <li>Group Stage insights show pick distribution (what % of players picked each team or draw per match), consensus ratings, and group standings predictions across all 12 groups.</li>
+        <li>Insights also open in <strong>By Date view</strong> — today's matches appear at the top with full pick distribution bars. Switch to <em>By Group</em> for the traditional group-by-group view.</li>
+        <li>Knockout insights unlock after the Round of 32 begins and show bracket pick popularity round by round.</li>
+        <li>Insights are hidden until picks are locked to prevent copying — everyone picks independently first.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Tips</div>
+      <ul>
+        <li>Group Stage picks save automatically on every click — it is safe to navigate away at any time and come back.</li>
+        <li>Knockout picks must be saved explicitly with the Save button — don't forget to hit it before the deadline.</li>
+        <li>Use the <strong>By Date view</strong> on match days to quickly find today's fixtures and check your picks without scrolling through all 12 groups.</li>
+        <li>Check the Insights tab after June 11 to see how your picks compare to the rest of the group.</li>
+        <li>The bracket fills in dynamically as you make Knockout picks — you can follow your predicted path all the way to the Final before saving.</li>
+      </ul>
+    </div>
+
+    <div class="updated">Last updated June 14, 2026</div>
+
+  </div>
+</body>
+</html>
