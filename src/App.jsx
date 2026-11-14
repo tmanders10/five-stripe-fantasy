@@ -137,14 +137,15 @@ function applyTheme(name) {
 // ── 5. SHARED UI COMPONENTS ──────────────────────────────────────────────────
 function buildStyles() {
   return {
-    app: { fontFamily: "'DM Sans', sans-serif", background: C.bg, minHeight: "100vh", color: C.text },
+    app: { fontFamily: "'DM Sans', sans-serif", background: C.bg, minHeight: "100vh", color: C.text, width: "100%", overflowX: "clip" },
     nav: {
       background: C.navyMid, color: C.white, padding: "0 clamp(0.75rem, 2.5vw, 1.5rem)",
+      width: "100%", boxSizing: "border-box",
       display: "flex", alignItems: "center", justifyContent: "space-between",
       height: "62px", position: "sticky", top: 0, zIndex: 200,
       boxShadow: "0 4px 18px rgba(0,0,0,0.18)",
     },
-    navLogo: { fontSize: "17px", fontWeight: 800, color: C.white, letterSpacing: "-0.3px", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, display: "flex", alignItems: "center", gap: "10px" },
+    navLogo: { fontSize: "17px", fontWeight: 800, color: C.white, letterSpacing: "-0.3px", cursor: "pointer", whiteSpace: "nowrap", minWidth: 0, display: "flex", alignItems: "center", gap: "10px" },
     navLinks: { display: "flex", gap: "4px", alignItems: "center", overflowX: "auto", scrollbarWidth: "none" },
     navBtn: (active) => ({
       background: active ? C.navy : "transparent",
@@ -160,7 +161,7 @@ function buildStyles() {
     },
     heroTitle: { fontSize: "clamp(1.8rem,5vw,2.75rem)", fontWeight: 800, color: C.gold, margin: "0 0 0.5rem", letterSpacing: "-0.5px" },
     heroSub: { fontSize: "clamp(0.85rem,3vw,1rem)", color: "rgba(255,255,255,0.8)", margin: "0 0 1.25rem" },
-    container: { maxWidth: "960px", margin: "0 auto", padding: "clamp(0.75rem, 3vw, 1.5rem)" },
+    container: { maxWidth: "960px", width: "100%", boxSizing: "border-box", margin: "0 auto", padding: "clamp(0.75rem, 3vw, 1.5rem)" },
     card: {
       background: C.cardBg || C.white,
       borderRadius: "12px",
@@ -224,6 +225,15 @@ function Alert({ type, msg }) {
   return <div style={styles.alert(type)}>{msg}</div>;
 }
 
+function GlobalStyles() {
+  return (
+    <style>{`
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body, #root { width: 100%; max-width: 100%; overflow-x: clip; margin: 0; padding: 0; }
+    `}</style>
+  );
+}
+
 function Spinner() {
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
@@ -269,22 +279,24 @@ function CircleLogo({ size = 54, src = C.heroLogo, fallback = null }) {
 }
 
 function PageBanner({ icon: Icon, badge, title, subtitle, rightSlot = null }) {
+  const isMobile = useIsMobile();
   return (
     <div style={{
       background: `linear-gradient(135deg, ${C.navyMid} 0%, #2d2d2d 60%, ${C.navy} 100%)`,
       borderRadius: "14px",
-      padding: "1.4rem 1.5rem",
+      padding: isMobile ? "1.1rem 1rem" : "1.4rem 1.5rem",
       color: C.white,
       marginBottom: "1.15rem",
       boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
       display: "flex",
+      flexDirection: isMobile ? "column" : "row",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: isMobile ? "stretch" : "center",
       flexWrap: "wrap",
       gap: "12px",
     }}>
-      <div style={{ minWidth: "220px", flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap" }}>
           <div style={{
             width: "34px", height: "34px", borderRadius: "10px",
             background: C.navy, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
@@ -313,7 +325,7 @@ function PageBanner({ icon: Icon, badge, title, subtitle, rightSlot = null }) {
           </p>
         )}
       </div>
-      {rightSlot && <div style={{ flexShrink: 0 }}>{rightSlot}</div>}
+      {rightSlot && <div style={{ flexShrink: 0, minWidth: 0 }}>{rightSlot}</div>}
     </div>
   );
 }
@@ -387,12 +399,15 @@ function TeamBtn({ team, selected, onClick, style = {}, resultState = null, disa
 
 function AppNav({ page, setPage, isAdmin, setShowAdmin, themeKey }) {
   const [isCompact, setIsCompact] = useState(() => window.innerWidth < 900);
+  const [isPhone, setIsPhone] = useState(() => window.innerWidth < 640);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const onResize = () => {
       const compact = window.innerWidth < 900;
+      const phone = window.innerWidth < 640;
       setIsCompact(compact);
+      setIsPhone(phone);
       if (!compact) setMenuOpen(false);
     };
     window.addEventListener("resize", onResize);
@@ -426,11 +441,12 @@ function AppNav({ page, setPage, isAdmin, setShowAdmin, themeKey }) {
         <div style={{
           maxWidth: "1100px",
           width: "100%",
+          minWidth: 0,
           margin: "0 auto",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: "12px",
+          gap: isPhone ? "8px" : "12px",
         }}>
           <button
             type="button"
@@ -441,14 +457,18 @@ function AppNav({ page, setPage, isAdmin, setShowAdmin, themeKey }) {
               border: "none",
               padding: 0,
               color: C.white,
+              minWidth: 0,
+              flexShrink: 1,
+              overflow: "hidden",
+              gap: isPhone ? "8px" : "10px",
             }}
           >
             <CircleLogo
-              size={32}
+              size={isPhone ? 30 : 32}
               fallback={(
                 <span style={{
-                  width: "32px",
-                  height: "32px",
+                  width: isPhone ? "30px" : "32px",
+                  height: isPhone ? "30px" : "32px",
                   borderRadius: "50%",
                   background: accentColor,
                   display: "inline-flex",
@@ -463,50 +483,57 @@ function AppNav({ page, setPage, isAdmin, setShowAdmin, themeKey }) {
             <span style={{
               fontFamily: C.fontSerif ? "'Georgia','Times New Roman',serif" : "'DM Sans',sans-serif",
               fontStyle: C.fontSerif ? "italic" : "normal",
-              fontSize: "18px",
+              fontSize: isPhone ? "16px" : "18px",
               fontWeight: 800,
               letterSpacing: "-0.2px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}>
               {C.navTitle || "Five Stripe Fantasy"}
             </span>
           </button>
 
           {isCompact ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
-              <span style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                fontSize: "12px",
-                fontWeight: 700,
-                color: accentColor,
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                padding: "5px 10px",
-                borderRadius: "999px",
-                whiteSpace: "nowrap",
-              }}>
-                <CurrentIcon size={13} color={accentColor} />
-                {currentItem[1]}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto", flexShrink: 0 }}>
+              {!isPhone && (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: accentColor,
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  padding: "5px 10px",
+                  borderRadius: "999px",
+                  whiteSpace: "nowrap",
+                }}>
+                  <CurrentIcon size={13} color={accentColor} />
+                  {currentItem[1]}
+                </span>
+              )}
               <button
                 type="button"
                 aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((o) => !o)}
                 style={{
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: menuOpen ? accentColor : "rgba(255,255,255,0.12)",
+                  border: `1px solid ${menuOpen ? accentColor : "rgba(255,255,255,0.24)"}`,
                   borderRadius: "8px",
                   cursor: "pointer",
-                  width: "36px",
-                  height: "36px",
+                  width: "38px",
+                  height: "38px",
+                  flexShrink: 0,
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: C.white,
+                  color: menuOpen ? "#1a1a1a" : C.white,
                 }}
               >
-                {menuOpen ? <X size={18} /> : <Menu size={18} />}
+                {menuOpen ? <X size={19} /> : <Menu size={19} />}
               </button>
             </div>
           ) : (
@@ -577,19 +604,34 @@ function AppNav({ page, setPage, isAdmin, setShowAdmin, themeKey }) {
       </nav>
 
       {isCompact && menuOpen && (
-        <div style={{
-          position: "fixed",
-          top: "62px",
-          left: 0,
-          right: 0,
-          zIndex: 199,
-          background: barBg,
-          borderBottom: `2px solid ${accentColor}`,
-          boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
-          padding: "8px 12px 12px",
-        }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxWidth: "560px", margin: "0 auto" }}>
-            {navItems.map(([id, label, Icon]) => {
+        <>
+          <div
+            onClick={() => setMenuOpen(false)}
+            style={{
+              position: "fixed",
+              top: "62px",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 198,
+              background: "rgba(0,0,0,0.45)",
+            }}
+          />
+          <div style={{
+            position: "fixed",
+            top: "62px",
+            left: 0,
+            right: 0,
+            maxHeight: "calc(100vh - 62px)",
+            overflowY: "auto",
+            zIndex: 199,
+            background: barBg,
+            borderBottom: `2px solid ${accentColor}`,
+            boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
+            padding: "8px 12px 12px",
+          }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxWidth: "560px", margin: "0 auto" }}>
+              {navItems.map(([id, label, Icon]) => {
               const active = page === id;
               return (
                 <button
@@ -667,8 +709,9 @@ function AppNav({ page, setPage, isAdmin, setShowAdmin, themeKey }) {
               <LogOut size={16} />
               <span>Sign Out</span>
             </button>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
@@ -676,6 +719,7 @@ function AppNav({ page, setPage, isAdmin, setShowAdmin, themeKey }) {
 
 // ── 6. AUTH SCREEN ───────────────────────────────────────────────────────────
 function AuthScreen({ registrationOpen = true, onProfileSynced }) {
+  const isMobile = useIsMobile();
   const [mode, setMode] = useState("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -718,13 +762,25 @@ function AuthScreen({ registrationOpen = true, onProfileSynced }) {
 
   return (
     <div style={{ ...styles.app, display: "flex", flexDirection: "column", background: C.bg }}>
-      <div style={{ ...styles.hero, background: `linear-gradient(135deg, ${C.navyMid} 0%, #2d2d2d 58%, ${C.navy} 100%)` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "18px", marginBottom: "0.5rem" }}>
-          <CircleLogo size={64} />
+      <GlobalStyles />
+      <div style={{
+        ...styles.hero,
+        padding: isMobile ? "1.6rem 1rem 1.4rem" : "2.5rem 1.5rem 2rem",
+        background: `linear-gradient(135deg, ${C.navyMid} 0%, #2d2d2d 58%, ${C.navy} 100%)`,
+      }}>
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: isMobile ? "10px" : "18px",
+          marginBottom: "0.5rem",
+        }}>
+          <CircleLogo size={isMobile ? 54 : 64} />
           <div style={{ ...styles.heroTitle, margin: 0, fontFamily: C.fontSerif ? "'Georgia','Times New Roman',serif" : "inherit", fontStyle: C.fontSerif ? "italic" : "normal", color: C.heroTitleColor || C.white }}>
             {C.heroTitle}
           </div>
-          <CircleLogo size={64} />
+          {!isMobile && <CircleLogo size={64} />}
         </div>
         <div style={{ ...styles.heroSub, color: C.heroSubColor }}>{C.heroSub}</div>
       </div>
@@ -784,6 +840,7 @@ function AuthScreen({ registrationOpen = true, onProfileSynced }) {
 
 // ── 7. STAGE 1 PICKS (WILD CARD + ROUND ONE BEST-OF-3 SERIES) ────────────────
 function Stage1Picks({ userId, locked, matchResultsCache = [], standingsCache = [] }) {
+  const isMobile = useIsMobile();
   const [activeConf, setActiveConf] = useState("EAST");
   const [viewMode, setViewMode] = useState("series"); // 'series' or 'date'
   const [matchPicks, setMatchPicks] = useState({});
@@ -921,23 +978,39 @@ function Stage1Picks({ userId, locked, matchResultsCache = [], standingsCache = 
 
     return (
       <div key={m.matchId} style={{ padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "4px 8px", marginBottom: "6px" }}>
           <span style={{ fontSize: "11px", fontWeight: 700, color: C.text, background: `${C.navy}25`, padding: "2px 8px", borderRadius: "4px" }}>
             {showSeriesPrefix ? `${SERIES_LABELS[m.group]} · ` : ""}
             {m.isWildCard ? "WILD CARD (SINGLE ELIM.)" : `GAME ${m.gameNum}${m.gameNum === 3 ? " (IF NECESSARY)" : ""}`}
           </span>
           <span style={{ fontSize: "11px", color: C.textMuted }}>{m.date} · {m.time}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "stretch" : "center",
+          gap: isMobile ? "6px" : "8px",
+        }}>
           <TeamBtn team={t1} selected={!hasResult && userPick === "team1"} resultState={t1State} readOnly={locked || hasResult} onClick={() => pickMatch(m.matchId, "team1")} />
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted }}>vs</span>
-            {hasResult && (
-              <span style={{ fontSize: "11px", fontWeight: 700, color: earnedPts ? C.green : C.textMuted }}>
-                {earnedPts ? `✓ ${earnedPts}` : "✗ +0"}
-              </span>
-            )}
-          </div>
+          {isMobile ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "11px", fontWeight: 700, color: C.textMuted, lineHeight: 1 }}>
+              <span>vs</span>
+              {hasResult && (
+                <span style={{ color: earnedPts ? C.green : C.textMuted }}>
+                  {earnedPts ? `✓ ${earnedPts}` : "✗ +0"}
+                </span>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted }}>vs</span>
+              {hasResult && (
+                <span style={{ fontSize: "11px", fontWeight: 700, color: earnedPts ? C.green : C.textMuted }}>
+                  {earnedPts ? `✓ ${earnedPts}` : "✗ +0"}
+                </span>
+              )}
+            </div>
+          )}
           <TeamBtn team={t2} selected={!hasResult && userPick === "team2"} resultState={t2State} readOnly={locked || hasResult} onClick={() => pickMatch(m.matchId, "team2")} />
         </div>
       </div>
@@ -953,11 +1026,11 @@ function Stage1Picks({ userId, locked, matchResultsCache = [], standingsCache = 
         subtitle="Pick both Wild Card Play-In winners and all 8 Best-of-3 series—every click saves automatically."
         rightSlot={
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: "10px", padding: "8px 14px", textAlign: "center", minWidth: "92px" }}>
+            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: "10px", padding: "8px 14px", textAlign: "center", minWidth: "92px", flex: isMobile ? 1 : undefined }}>
               <div style={{ fontSize: "10px", fontWeight: 800, color: C.navy, letterSpacing: "0.06em" }}>WILD CARD</div>
               <div style={{ fontSize: "1.25rem", fontWeight: 800 }}>{wcPickedCount}<span style={{ fontSize: "0.85rem", opacity: 0.6 }}>/2</span></div>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: "10px", padding: "8px 14px", textAlign: "center", minWidth: "92px" }}>
+            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: "10px", padding: "8px 14px", textAlign: "center", minWidth: "92px", flex: isMobile ? 1 : undefined }}>
               <div style={{ fontSize: "10px", fontWeight: 800, color: C.navy, letterSpacing: "0.06em" }}>SERIES SET</div>
               <div style={{ fontSize: "1.25rem", fontWeight: 800 }}>{clinchedSeriesCount}<span style={{ fontSize: "0.85rem", opacity: 0.6 }}>/8</span></div>
             </div>
@@ -968,16 +1041,16 @@ function Stage1Picks({ userId, locked, matchResultsCache = [], standingsCache = 
       {locked && <div style={styles.alert("warning")}>Stage 1 (Play-In &amp; Conf QF) picks are locked!</div>}
 
       {/* Conference & View Switcher */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "1.25rem" }}>
-        <div style={{ display: "flex", gap: "8px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", flexDirection: isMobile ? "column" : "row", flexWrap: "wrap", gap: "8px", marginBottom: "1.25rem" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {["EAST", "WEST"].map((conf) => (
-            <button key={conf} style={styles.tab(activeConf === conf && viewMode === "series")} onClick={() => { setActiveConf(conf); setViewMode("series"); }}>
+            <button key={conf} style={{ ...styles.tab(activeConf === conf && viewMode === "series"), flex: isMobile ? 1 : undefined, padding: isMobile ? "8px 12px" : "8px 18px" }} onClick={() => { setActiveConf(conf); setViewMode("series"); }}>
               {conf === "EAST" ? "Eastern Conference" : "Western Conference"}
             </button>
           ))}
         </div>
         <button
-          style={{ ...styles.tab(viewMode === "date"), display: "inline-flex", alignItems: "center", gap: "6px" }}
+          style={{ ...styles.tab(viewMode === "date"), display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
           onClick={() => setViewMode(viewMode === "date" ? "series" : "date")}
         >
           <Calendar size={14} />
@@ -1058,6 +1131,7 @@ function Stage1Picks({ userId, locked, matchResultsCache = [], standingsCache = 
 
 // ── 8. STAGE 2 PICKS (FINAL 8 SINGLE-ELIMINATION BRACKET) ────────────────────
 function Stage2Picks({ userId, locked, stage2Open, knockoutBracket, koResultsCache = [] }) {
+  const isMobile = useIsMobile();
   const [picks, setPicks] = useState({});
   const [autoSaveState, setAutoSaveState] = useState("");
   const [msg, setMsg] = useState({ type: "", text: "" });
@@ -1213,9 +1287,14 @@ function Stage2Picks({ userId, locked, stage2Open, knockoutBracket, koResultsCac
                         Select winners in the previous round to populate this matchup
                       </div>
                     ) : (
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{
+                        display: "flex",
+                        flexDirection: isMobile ? "column" : "row",
+                        alignItems: isMobile ? "stretch" : "center",
+                        gap: isMobile ? "6px" : "8px",
+                      }}>
                         <TeamBtn team={t1} selected={!hasResult && picked === t1} resultState={t1State} readOnly={isReadOnly} onClick={() => makePick(slot.slotId, t1)} />
-                        <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted }}>vs</span>
+                        <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted, textAlign: "center", lineHeight: 1 }}>vs</span>
                         <TeamBtn team={t2} selected={!hasResult && picked === t2} resultState={t2State} readOnly={isReadOnly} onClick={() => makePick(slot.slotId, t2)} />
                       </div>
                     )}
@@ -1244,6 +1323,7 @@ function Stage2Picks({ userId, locked, stage2Open, knockoutBracket, koResultsCac
 
 // ── 9. LEADERBOARD ───────────────────────────────────────────────────────────
 function Leaderboard({ currentUserId, leagueId, leagueName, isAdmin, resultsVersion }) {
+  const isMobile = useIsMobile();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -1313,7 +1393,11 @@ function Leaderboard({ currentUserId, leagueId, leagueName, isAdmin, resultsVers
             <span>Your Standing</span>
             {leagueName && <span style={styles.badge(C.white, C.navyMid)}>{leagueName}</span>}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "10px" }}>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: isMobile ? "8px" : "10px",
+          }}>
             {[
               ["RANK", `#${me.rank}`, C.navy],
               ["TOTAL PTS", me.total, C.navyMid],
@@ -1321,12 +1405,12 @@ function Leaderboard({ currentUserId, leagueId, leagueName, isAdmin, resultsVers
               ["FINAL 8 BRACKET", me.s2score, "#d97706"],
             ].map(([l, v, accent]) => (
               <div key={l} style={{
-                padding: "12px 14px", borderRadius: "10px", background: C.white,
+                padding: isMobile ? "10px 11px" : "12px 14px", borderRadius: "10px", background: C.white,
                 border: `1px solid ${C.border}`, borderLeft: `4px solid ${accent}`,
-                boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.03)", minWidth: 0,
               }}>
-                <div style={{ fontSize: "10.5px", fontWeight: 800, color: C.textMuted, letterSpacing: "0.05em", marginBottom: "4px" }}>{l}</div>
-                <div style={{ fontSize: "1.65rem", fontWeight: 800, color: C.text }}>{v}</div>
+                <div style={{ fontSize: isMobile ? "9.5px" : "10.5px", fontWeight: 800, color: C.textMuted, letterSpacing: "0.05em", marginBottom: "4px" }}>{l}</div>
+                <div style={{ fontSize: isMobile ? "1.4rem" : "1.65rem", fontWeight: 800, color: C.text }}>{v}</div>
               </div>
             ))}
           </div>
@@ -1339,27 +1423,40 @@ function Leaderboard({ currentUserId, leagueId, leagueName, isAdmin, resultsVers
           <span style={{ fontSize: "12px", fontWeight: 600, color: C.textMuted }}>{rows.length} {rows.length === 1 ? "player" : "players"}</span>
         </div>
         <div style={{ overflowX: "auto", background: C.white, borderRadius: "10px", border: `1px solid ${C.border}` }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: isMobile ? "12.5px" : "14px" }}>
             <thead>
               <tr style={{ borderBottom: `2px solid ${C.border}` }}>
-                {["Rank", "Player", "Play-In / Conf QF", "Final 8", "Total", "Correct"].map((h) => (
-                  <th key={h} style={{ padding: "8px 10px", textAlign: h === "Player" ? "left" : "center", fontSize: "12px", color: C.textMuted }}>{h}</th>
+                {[
+                  "Rank",
+                  "Player",
+                  isMobile ? "Stage 1" : "Play-In / Conf QF",
+                  "Final 8",
+                  "Total",
+                  isMobile ? "Hits" : "Correct",
+                ].map((h) => (
+                  <th key={h} style={{
+                    padding: isMobile ? "8px 6px" : "8px 10px",
+                    textAlign: h === "Player" ? "left" : "center",
+                    fontSize: isMobile ? "11px" : "12px",
+                    color: C.textMuted,
+                    whiteSpace: "nowrap",
+                  }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} style={{ borderBottom: `1px solid ${C.border}`, background: r.id === currentUserId ? `${C.navy}18` : "transparent" }}>
-                  <td style={{ padding: "10px", textAlign: "center", fontWeight: 700 }}>
+                  <td style={{ padding: isMobile ? "9px 6px" : "10px", textAlign: "center", fontWeight: 700, whiteSpace: "nowrap" }}>
                     {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : `#${r.rank}`}
                   </td>
-                  <td style={{ padding: "10px", fontWeight: r.id === currentUserId ? 700 : 500 }}>
+                  <td style={{ padding: isMobile ? "9px 6px" : "10px", fontWeight: r.id === currentUserId ? 700 : 500 }}>
                     {r.display_name} {r.id === currentUserId && <span style={{ fontSize: "11px", color: C.navy }}>(you)</span>}
                   </td>
-                  <td style={{ padding: "10px", textAlign: "center" }}>{r.s1score}</td>
-                  <td style={{ padding: "10px", textAlign: "center" }}>{r.s2score}</td>
-                  <td style={{ padding: "10px", textAlign: "center", fontWeight: 800 }}>{r.total}</td>
-                  <td style={{ padding: "10px", textAlign: "center", color: C.textMuted }}>{r.correctPicks}</td>
+                  <td style={{ padding: isMobile ? "9px 6px" : "10px", textAlign: "center" }}>{r.s1score}</td>
+                  <td style={{ padding: isMobile ? "9px 6px" : "10px", textAlign: "center" }}>{r.s2score}</td>
+                  <td style={{ padding: isMobile ? "9px 6px" : "10px", textAlign: "center", fontWeight: 800 }}>{r.total}</td>
+                  <td style={{ padding: isMobile ? "9px 6px" : "10px", textAlign: "center", color: C.textMuted }}>{r.correctPicks}</td>
                 </tr>
               ))}
             </tbody>
@@ -1436,6 +1533,7 @@ function ResultTeamChip({ team, isWinner = false, isLoser = false, align = "left
 }
 
 function ResultsPage({ matchResultsCache = [], standingsCache = [], koResultsCache = [] }) {
+  const isMobile = useIsMobile();
   const mrMap = {}; matchResultsCache.forEach((r) => (mrMap[r.match_id] = r));
   const stMap = {}; standingsCache.forEach((s) => (stMap[s.group_code] = s));
   const koMap = {}; koResultsCache.forEach((r) => (koMap[r.match_id] = r));
@@ -1452,12 +1550,12 @@ function ResultsPage({ matchResultsCache = [], standingsCache = [], koResultsCac
         title="MLS Cup Playoffs Scoreboard"
         subtitle="Track clinched Best-of-3 series, match winners, and Final 8 Knockout advancement."
         rightSlot={
-          <div style={{ display: "flex", gap: "8px" }}>
-            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: "10px", padding: "8px 14px", textAlign: "center", minWidth: "90px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: "10px", padding: "8px 14px", textAlign: "center", minWidth: "90px", flex: isMobile ? 1 : undefined }}>
               <div style={{ fontSize: "10px", fontWeight: 800, color: C.navy, letterSpacing: "0.06em" }}>SERIES</div>
               <div style={{ fontSize: "1.25rem", fontWeight: 800 }}>{clinchedCount}<span style={{ fontSize: "0.85rem", opacity: 0.6 }}>/8</span></div>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: "10px", padding: "8px 14px", textAlign: "center", minWidth: "90px" }}>
+            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: "10px", padding: "8px 14px", textAlign: "center", minWidth: "90px", flex: isMobile ? 1 : undefined }}>
               <div style={{ fontSize: "10px", fontWeight: 800, color: C.navy, letterSpacing: "0.06em" }}>MATCHES</div>
               <div style={{ fontSize: "1.25rem", fontWeight: 800 }}>{completedMatches}<span style={{ fontSize: "0.85rem", opacity: 0.6 }}>/{ALL_GROUP_MATCHES.length}</span></div>
             </div>
@@ -1478,17 +1576,24 @@ function ResultsPage({ matchResultsCache = [], standingsCache = [], koResultsCac
                 const t2 = res?.team2 || "TBD";
                 const winner = res?.result === "team1" ? t1 : res?.result === "team2" ? t2 : null;
                 return (
-                  <div key={slotId} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                  <div key={slotId} style={{
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    alignItems: isMobile ? "stretch" : "center",
+                    gap: isMobile ? "5px" : "8px",
+                    marginBottom: "10px",
+                  }}>
                     <ResultTeamChip team={t1} isWinner={res?.result === "team1"} isLoser={res?.result === "team2"} align="left" />
                     <span style={{
                       padding: "4px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700,
                       background: winner ? "rgba(29,158,117,0.12)" : "#f1f5f9",
                       color: winner ? C.green : C.textMuted,
                       whiteSpace: "nowrap", flexShrink: 0, textAlign: "center", minWidth: "74px",
+                      alignSelf: isMobile ? "center" : undefined,
                     }}>
                       {winner ? (res.score1 != null && res.score2 != null ? `${res.score1} – ${res.score2}` : "FINAL") : "UPCOMING"}
                     </span>
-                    <ResultTeamChip team={t2} isWinner={res?.result === "team2"} isLoser={res?.result === "team1"} align="right" />
+                    <ResultTeamChip team={t2} isWinner={res?.result === "team2"} isLoser={res?.result === "team1"} align={isMobile ? "left" : "right"} />
                   </div>
                 );
               })}
@@ -1499,7 +1604,7 @@ function ResultsPage({ matchResultsCache = [], standingsCache = [], koResultsCac
 
       <div style={{ ...styles.card, borderTop: `4px solid ${C.navy}` }}>
         <div style={styles.cardTitle}>Round One Series Summary</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
           {Object.keys(GROUPS).map((sId) => {
             const st = stMap[sId];
             const winnerMeta = st?.first_place ? TEAM_META[st.first_place] : null;
@@ -1553,23 +1658,29 @@ function ResultsPage({ matchResultsCache = [], standingsCache = [], koResultsCac
           const [t1, t2] = getResolvedMatchTeams(m, {}, mrMap);
           return (
             <div key={m.matchId} style={{ padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "4px 8px", marginBottom: "5px" }}>
                 <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted }}>
                   {SERIES_LABELS[m.group]} · {m.isWildCard ? "Wild Card" : `Game ${m.gameNum}`}
                 </span>
                 <span style={{ fontSize: "11px", color: C.textMuted }}>{m.date} · {m.time}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: isMobile ? "stretch" : "center",
+                gap: isMobile ? "5px" : "8px",
+              }}>
                 <ResultTeamChip team={t1} isWinner={res?.result === "team1"} isLoser={res?.result === "team2"} align="left" />
                 <span style={{
-                  padding: "4px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700,
+                  padding: "3px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700,
                   background: res?.result ? "rgba(29,158,117,0.12)" : "#f1f5f9",
                   color: res?.result ? C.green : C.textMuted,
-                  whiteSpace: "nowrap", flexShrink: 0, textAlign: "center", minWidth: "66px",
+                  whiteSpace: "nowrap", flexShrink: 0, textAlign: "center", minWidth: isMobile ? "54px" : "66px",
+                  alignSelf: isMobile ? "center" : undefined,
                 }}>
                   {res?.result ? (res.score1 != null && res.score2 != null ? `${res.score1} – ${res.score2}` : "FINAL") : "vs"}
                 </span>
-                <ResultTeamChip team={t2} isWinner={res?.result === "team2"} isLoser={res?.result === "team1"} align="right" />
+                <ResultTeamChip team={t2} isWinner={res?.result === "team2"} isLoser={res?.result === "team1"} align={isMobile ? "left" : "right"} />
               </div>
             </div>
           );
@@ -1580,6 +1691,7 @@ function ResultsPage({ matchResultsCache = [], standingsCache = [], koResultsCac
 }
 
 function Insights({ stage1Locked, stage2Locked }) {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(stage2Locked ? "stage2" : "stage1");
   const [groupPicks, setGroupPicks] = useState([]);
   const [wcPicks, setWcPicks] = useState([]);
@@ -1653,6 +1765,19 @@ function Insights({ stage1Locked, stage2Locked }) {
     return entries.map(([team, cnt]) => {
       const pct = total ? Math.round((cnt / total) * 100) : 0;
       const barColor = TEAM_META[team]?.border || C.navy;
+      if (isMobile) {
+        return (
+          <div key={team} style={{ marginBottom: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12.5px", marginBottom: "4px", gap: "8px" }}>
+              <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{team}</span>
+              <span style={{ fontWeight: 700, fontSize: "12px", color: C.text, flexShrink: 0 }}>{cnt} ({pct}%)</span>
+            </div>
+            <div style={{ width: "100%", height: "8px", background: C.border, borderRadius: "5px", overflow: "hidden" }}>
+              <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: "5px" }} />
+            </div>
+          </div>
+        );
+      }
       return (
         <div key={team} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", marginBottom: "5px" }}>
           <span style={{ width: "170px", flexShrink: 0, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team}</span>
@@ -2380,15 +2505,18 @@ function AdminPanel({ leagueId, onClose, onResultsChange }) {
                       const [t1, t2] = getResolvedMatchTeams(m, {}, mrMap);
                       return (
                         <div key={m.matchId} style={{
-                          display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px",
+                          display: "flex",
+                          flexDirection: isMobile ? "column" : "row",
+                          alignItems: isMobile ? "stretch" : "center",
+                          gap: isMobile ? "6px" : "8px",
+                          padding: "8px 10px",
                           background: C.white, borderRadius: "9px", border: `1px solid ${C.border}`,
-                          flexWrap: isMobile ? "wrap" : "nowrap",
                         }}>
-                          <span style={{ fontSize: "11px", fontWeight: 800, minWidth: "72px", color: C.textMuted }}>
+                          <span style={{ fontSize: "11px", fontWeight: 800, minWidth: isMobile ? 0 : "72px", color: C.textMuted }}>
                             {m.matchId === "WC_E" ? "EAST WC" : "WEST WC"}
                           </span>
                           {renderAdminTeamBtn(t1, res?.result === "team1", () => recordStage1Result(m, res?.result === "team1" ? null : "team1"))}
-                          <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted }}>vs</span>
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted, textAlign: "center" }}>vs</span>
                           {renderAdminTeamBtn(t2, res?.result === "team2", () => recordStage1Result(m, res?.result === "team2" ? null : "team2"))}
                         </div>
                       );
@@ -2421,17 +2549,22 @@ function AdminPanel({ leagueId, onClose, onResultsChange }) {
                                 <span style={{ fontSize: "11px", fontWeight: 600, color: C.textMuted }}>Series In Progress</span>
                               )}
                             </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "10px" : "6px" }}>
                               {sMatches.map((m) => {
                                 const res = mrMap[m.matchId];
                                 const [t1, t2] = getResolvedMatchTeams(m, {}, mrMap);
                                 return (
-                                  <div key={m.matchId} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <span style={{ fontSize: "11px", fontWeight: 700, minWidth: "56px", color: C.textMuted }}>
+                                  <div key={m.matchId} style={{
+                                    display: "flex",
+                                    flexDirection: isMobile ? "column" : "row",
+                                    alignItems: isMobile ? "stretch" : "center",
+                                    gap: isMobile ? "5px" : "8px",
+                                  }}>
+                                    <span style={{ fontSize: "11px", fontWeight: 700, minWidth: isMobile ? 0 : "56px", color: C.textMuted }}>
                                       Game {m.gameNum}
                                     </span>
                                     {renderAdminTeamBtn(t1, res?.result === "team1", () => recordStage1Result(m, res?.result === "team1" ? null : "team1"))}
-                                    <span style={{ fontSize: "11px", color: C.textMuted }}>vs</span>
+                                    <span style={{ fontSize: "11px", color: C.textMuted, textAlign: "center" }}>vs</span>
                                     {renderAdminTeamBtn(t2, res?.result === "team2", () => recordStage1Result(m, res?.result === "team2" ? null : "team2"))}
                                   </div>
                                 );
@@ -2475,14 +2608,19 @@ function AdminPanel({ leagueId, onClose, onResultsChange }) {
                               <div style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted, marginBottom: "6px" }}>
                                 {SLOT_LABELS[slotId] || slotId}
                               </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <div style={{
+                                display: "flex",
+                                flexDirection: isMobile ? "column" : "row",
+                                alignItems: isMobile ? "stretch" : "center",
+                                gap: isMobile ? "5px" : "8px",
+                              }}>
                                 {renderAdminTeamBtn(
                                   t1,
                                   slot.result === "team1",
                                   () => recordStage2Result(slotId, round, slot.result === "team1" ? null : "team1", t1, t2),
                                   { disabled: notReady }
                                 )}
-                                <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted }}>vs</span>
+                                <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted, textAlign: "center" }}>vs</span>
                                 {renderAdminTeamBtn(
                                   t2,
                                   slot.result === "team2",
@@ -2621,21 +2759,23 @@ function AdminPanel({ leagueId, onClose, onResultsChange }) {
                           boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
                         }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
-                            <div>
-                              <span style={{ fontSize: "14px", fontWeight: 800, color: C.text }}>
-                                {p.display_name || "Unnamed Player"}
-                              </span>
-                              {p.is_admin && (
-                                <span style={{
-                                  marginLeft: "8px", fontSize: "10px", fontWeight: 800,
-                                  padding: "2px 6px", borderRadius: "4px",
-                                  background: C.navyMid, color: C.navy, verticalAlign: "middle",
-                                }}>
-                                  ADMIN
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                <span style={{ fontSize: "14px", fontWeight: 800, color: C.text }}>
+                                  {p.display_name || "Unnamed Player"}
                                 </span>
-                              )}
+                                {p.is_admin && (
+                                  <span style={{
+                                    fontSize: "10px", fontWeight: 800,
+                                    padding: "2px 6px", borderRadius: "4px",
+                                    background: C.navyMid, color: C.navy,
+                                  }}>
+                                    ADMIN
+                                  </span>
+                                )}
+                              </div>
                               {p.email && (
-                                <span style={{ marginLeft: "8px", fontSize: "12px", color: C.textMuted }}>{p.email}</span>
+                                <div style={{ fontSize: "12px", color: C.textMuted, wordBreak: "break-word", marginTop: "2px" }}>{p.email}</div>
                               )}
                             </div>
                             {p.stage2.championPick && (
@@ -2756,11 +2896,12 @@ function AdminPanel({ leagueId, onClose, onResultsChange }) {
                     const enabled = settings[key] === "true";
                     return (
                       <div key={key} style={{
-                        display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px",
+                        display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center",
+                        flexWrap: "wrap", gap: "10px 12px",
                         padding: "12px 14px", background: C.white, borderRadius: "10px",
                         border: `1px solid ${C.border}`,
                       }}>
-                        <div>
+                        <div style={{ minWidth: 0, flex: "1 1 220px" }}>
                           <div style={{ fontSize: "14px", fontWeight: 700, color: C.text }}>{label}</div>
                           <div style={{ fontSize: "12px", color: C.textMuted, marginTop: "2px" }}>{desc}</div>
                         </div>
@@ -2798,6 +2939,7 @@ function AdminPanel({ leagueId, onClose, onResultsChange }) {
 // ── 12. MAIN APP SHELL ───────────────────────────────────────────────────────
 
 export default function App() {
+  const isMobile = useIsMobile();
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [page, setPage] = useState("leaderboard");
@@ -2917,6 +3059,7 @@ export default function App() {
 
   return (
     <div style={{ ...styles.app, background: C.bg }}>
+      <GlobalStyles />
       <AppNav page={page} setPage={setPage} isAdmin={isAdmin} setShowAdmin={setShowAdmin} themeKey={themeKey} />
 
       {page === "leaderboard" && (
@@ -2926,34 +3069,49 @@ export default function App() {
               background: `linear-gradient(135deg, ${C.navyMid} 0%, #2d2d2d 58%, ${C.navy} 100%)`,
               color: C.white,
               borderRadius: "14px",
-              padding: "1.65rem 1.5rem",
+              padding: isMobile ? "1.2rem 1rem" : "1.65rem 1.5rem",
               boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
               textAlign: "center",
             }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", marginBottom: "0.5rem", flexWrap: "wrap" }}>
-                <CircleLogo size={56} />
+              <div style={{
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: isMobile ? "8px" : "16px",
+                marginBottom: "0.5rem",
+              }}>
+                <CircleLogo size={isMobile ? 50 : 56} />
                 <div style={{
                   ...styles.heroTitle,
                   margin: 0,
-                  fontSize: "clamp(1.5rem,4.5vw,2.35rem)",
+                  fontSize: "clamp(1.45rem,4.5vw,2.35rem)",
                   fontFamily: C.fontSerif ? "'Georgia','Times New Roman',serif" : "inherit",
                   fontStyle: C.fontSerif ? "italic" : "normal",
                   color: C.heroTitleColor || C.white,
                 }}>
                   {C.heroTitle}
                 </div>
-                <CircleLogo size={56} />
+                {!isMobile && <CircleLogo size={56} />}
               </div>
               <div style={{ fontSize: "clamp(0.85rem,2.8vw,0.98rem)", color: "rgba(255,255,255,0.84)", marginBottom: "0.85rem" }}>
                 {C.heroSub}
               </div>
               <div style={{
-                display: "inline-flex", alignItems: "center", gap: "8px",
-                fontSize: "12.5px", color: "rgba(255,255,255,0.92)",
-                background: "rgba(255,255,255,0.12)", padding: "5px 14px", borderRadius: "999px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexWrap: "wrap",
+                gap: "4px 8px",
+                maxWidth: "100%",
+                fontSize: "12.5px",
+                color: "rgba(255,255,255,0.92)",
+                background: "rgba(255,255,255,0.12)",
+                padding: isMobile ? "6px 12px" : "5px 14px",
+                borderRadius: isMobile ? "12px" : "999px",
               }}>
                 <span>Welcome, <strong style={{ color: C.white }}>{profile?.display_name}</strong></span>
-                {leagueName && <span style={{ opacity: 0.6 }}>·</span>}
+                {leagueName && !isMobile && <span style={{ opacity: 0.6 }}>·</span>}
                 {leagueName && <span style={{ color: C.navy, fontWeight: 700 }}>{leagueName}</span>}
               </div>
             </div>
