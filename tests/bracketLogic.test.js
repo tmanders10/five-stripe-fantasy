@@ -22,6 +22,7 @@ import {
   calcStage2Score,
   computeBracketCascade,
   computeCSFUpdates,
+  calcUserPickProgress,
 } from "../src/bracketLogic.js";
 
 // ── 1. TOURNAMENT STRUCTURE & DATA INTEGRITY ─────────────────────────────────
@@ -530,3 +531,62 @@ describe("End-to-end smoke test: Stage 1 -> Auto-fill CSF -> User Stage 2 Picks 
     assert.deepEqual(s2score, { score: 20, correct: 4 });
   });
 });
+
+// ── 6. USER PICK COMPLETENESS REPORTING ──────────────────────────────────────
+describe("User pick completeness reporting (calcUserPickProgress)", () => {
+  it("reports not_started when user has no picks", () => {
+    const prog = calcUserPickProgress({});
+    assert.equal(prog.stage1.status, "not_started");
+    assert.equal(prog.stage1.done, 0);
+    assert.equal(prog.stage1.pct, 0);
+    assert.deepEqual(prog.stage1.missingWC, ["WC_E", "WC_W"]);
+    assert.equal(prog.stage1.missingSeries.length, 8);
+    assert.equal(prog.stage2.status, "not_started");
+    assert.equal(prog.stage2.done, 0);
+    assert.equal(prog.stage2.pct, 0);
+    assert.equal(prog.stage2.championPick, null);
+  });
+
+  it("reports complete Stage 1 with 2-0 sweeps (no Game 3 needed) and in_progress when partial", () => {
+    const partialMatchPicks = [
+      { match_id: "WC_E", pick: "team1" },
+      { match_id: "E_S1_G1", pick: "team1" }, // only Game 1 picked -> not clinched
+    ];
+    const partial = calcUserPickProgress({ userMatchPicks: partialMatchPicks });
+    assert.equal(partial.stage1.status, "in_progress");
+    assert.equal(partial.stage1.wcDone, 1);
+    assert.equal(partial.stage1.seriesDone, 0);
+    assert.equal(partial.stage1.round1GamesPicked, 1);
+    assert.equal(partial.stage1.pct, 10);
+
+    // Complete all 2 WC + 8 Round 1 series via 2-0 sweeps (only 16 R1 rows instead of 24)
+    const fullSweepPicks = [
+      { match_id: "WC_E", pick: "team1" },
+      { match_id: "WC_W", pick: "team2" },
+    ];
+    for (const sId of Object.keys(GROUPS)) {
+      fullSweepPicks.push({ match_id: `${sId}_G1`, pick: "team1" });
+      fullSweepPicks.push({ match_id: `${sId}_G2`, pick: "team2" });
+    }
+    const complete = calcUserPickProgress({
+      userMatchPicks: fullSweepPicks,
+      userStage2Picks: [
+        { slot_id: "CSF_1", picked_team: "Inter Miami" },
+        { slot_id: "CUP_1", picked_team: "LAFC" },
+      ],
+    });
+    assert.equal(complete.stage1.status, "complete");
+    assert.equal(complete.stage1.wcDone, 2);
+    assert.equal(complete.stage1.seriesDone, 8);
+    assert.equal(complete.stage1.pct, 100);
+    assert.deepEqual(complete.stage1.missingWC, []);
+    assert.deepEqual(complete.stage1.missingSeries, []);
+
+    assert.equal(complete.stage2.status, "in_progress");
+    assert.equal(complete.stage2.done, 2);
+    assert.equal(complete.stage2.total, 7);
+    assert.equal(complete.stage2.pct, 29);
+    assert.equal(complete.stage2.championPick, "LAFC");
+  });
+});
+

@@ -376,3 +376,94 @@ export function computeCSFUpdates(standingsList = [], currentBracket = [], { for
 
   return { nextBracket: Object.values(nextMap), changedRows };
 }
+
+export function calcUserPickProgress({ userMatchPicks = [], userGroupPicks = [], userStage2Picks = [] }) {
+  const matchPickMap = {};
+  (userMatchPicks || []).forEach((row) => {
+    if (row?.match_id && row?.pick) matchPickMap[row.match_id] = row.pick;
+  });
+
+  const groupPickMap = {};
+  (userGroupPicks || []).forEach((row) => {
+    if (row?.group_code && row?.first_place && row?.second_place) {
+      groupPickMap[row.group_code] = row;
+    }
+  });
+
+  const wcIds = Object.keys(WILD_CARDS);
+  const missingWC = wcIds.filter((id) => !matchPickMap[id]);
+  const wcDone = wcIds.length - missingWC.length;
+
+  const seriesIds = Object.keys(GROUPS);
+  const missingSeries = [];
+  let seriesDone = 0;
+  let round1GamesPicked = 0;
+
+  for (const sId of seriesIds) {
+    const g1 = matchPickMap[`${sId}_G1`];
+    const g2 = matchPickMap[`${sId}_G2`];
+    const g3 = matchPickMap[`${sId}_G3`];
+    if (g1) round1GamesPicked++;
+    if (g2) round1GamesPicked++;
+    if (g3 && !isSeriesSweep(sId, matchPickMap)) round1GamesPicked++;
+
+    const derived = deriveSeriesOutcome(calcSeriesWins(sId, matchPickMap, {}));
+    const hasDerivedOutcome = Boolean(derived.winner && derived.length);
+    const hasStoredGroupPick = Boolean(groupPickMap[sId]);
+
+    if (hasDerivedOutcome || hasStoredGroupPick) {
+      seriesDone++;
+    } else {
+      missingSeries.push(sId);
+    }
+  }
+
+  const stage1Done = wcDone + seriesDone;
+  const stage1Total = wcIds.length + seriesIds.length; // 2 Wild Cards + 8 Round One Series = 10
+  const stage1Pct = Math.round((stage1Done / stage1Total) * 100);
+  const stage1Status = stage1Done === stage1Total
+    ? "complete"
+    : (stage1Done > 0 || round1GamesPicked > 0)
+      ? "in_progress"
+      : "not_started";
+
+  const s2Map = {};
+  (userStage2Picks || []).forEach((row) => {
+    if (row?.slot_id && row?.picked_team) s2Map[row.slot_id] = row.picked_team;
+  });
+
+  const missingStage2 = STAGE2_SLOT_IDS.filter((id) => !s2Map[id]);
+  const stage2Done = STAGE2_SLOT_IDS.length - missingStage2.length;
+  const stage2Total = STAGE2_SLOT_IDS.length; // 7
+  const stage2Pct = Math.round((stage2Done / stage2Total) * 100);
+  const stage2Status = stage2Done === stage2Total
+    ? "complete"
+    : stage2Done > 0
+      ? "in_progress"
+      : "not_started";
+
+  return {
+    stage1: {
+      wcDone,
+      wcTotal: wcIds.length,
+      seriesDone,
+      seriesTotal: seriesIds.length,
+      round1GamesPicked,
+      done: stage1Done,
+      total: stage1Total,
+      pct: stage1Pct,
+      status: stage1Status,
+      missingWC,
+      missingSeries,
+    },
+    stage2: {
+      done: stage2Done,
+      total: stage2Total,
+      pct: stage2Pct,
+      status: stage2Status,
+      missingSlots: missingStage2,
+      championPick: s2Map.CUP_1 || null,
+    },
+  };
+}
+

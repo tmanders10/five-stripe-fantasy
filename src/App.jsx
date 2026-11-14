@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Trophy, Target, Zap, Award, BarChart3, CheckCircle2, Calendar, Lock, GitMerge, BookOpen, Shield, LogOut, Menu, X } from "lucide-react";
+import { Trophy, Target, Zap, Award, BarChart3, CheckCircle2, Calendar, Lock, GitMerge, BookOpen, Shield, LogOut, Menu, X, Users, Settings, RefreshCw } from "lucide-react";
 import {
   SCORING_RULES,
   WILD_CARDS,
@@ -20,6 +20,7 @@ import {
   calcStage2Score,
   computeBracketCascade,
   computeCSFUpdates,
+  calcUserPickProgress,
 } from "./bracketLogic.js";
 
 function useIsMobile() {
@@ -1968,12 +1969,20 @@ function UserGuide({ embedded = false }) {
 }
 
 // ── 11. ADMIN PANEL ──────────────────────────────────────────────────────────
-function AdminPanel({ onClose, onResultsChange }) {
+function AdminPanel({ leagueId, onClose, onResultsChange }) {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("results");
   const [results, setResults] = useState([]);
   const [standings, setStandings] = useState([]);
   const [settings, setSettings] = useState({});
   const [bracket, setBracket] = useState([]);
+  const [players, setPlayers] = useState([]);
+  const [allS1MatchPicks, setAllS1MatchPicks] = useState([]);
+  const [allS1GroupPicks, setAllS1GroupPicks] = useState([]);
+  const [allS2Picks, setAllS2Picks] = useState([]);
+  const [progressFilter, setProgressFilter] = useState("all");
+  const [progressSearch, setProgressSearch] = useState("");
+  const [refreshingProgress, setRefreshingProgress] = useState(false);
   const [msg, setMsg] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(true);
 
@@ -1990,23 +1999,60 @@ function AdminPanel({ onClose, onResultsChange }) {
   async function loadAll() {
     setLoading(true);
     try {
-      const [{ data: r }, { data: s }, { data: se }, { data: b }] = await Promise.all([
+      const [
+        { data: r },
+        { data: s },
+        { data: se },
+        { data: b },
+        { data: profs },
+        { data: s1m },
+        { data: s1g },
+        { data: s2p },
+      ] = await Promise.all([
         supabase.from("match_results").select("*"),
         supabase.from("group_standings").select("*"),
         supabase.from("app_settings").select("*"),
         supabase.from("match_results").select("*").in("stage", ["CSF", "CF", "CUP"]),
+        supabase.from("profiles").select("id, display_name, email, is_admin, league_id"),
+        supabase.from("stage1_match_picks").select("user_id, match_id, pick"),
+        supabase.from("stage1_group_picks").select("user_id, group_code, first_place, second_place"),
+        supabase.from("stage2_picks").select("user_id, slot_id, picked_team"),
       ]);
       setResults(r || []);
       setStandings(s || []);
       const sMap = {}; (se || []).forEach((x) => (sMap[x.key] = x.value));
       setSettings(sMap);
       setBracket(b || []);
+      setPlayers(profs || []);
+      setAllS1MatchPicks(s1m || []);
+      setAllS1GroupPicks(s1g || []);
+      setAllS2Picks(s2p || []);
       const { changed } = await syncCSFSlots(s || [], b || []);
       if (changed && onResultsChange) onResultsChange();
     } catch (e) {
       setMsg({ type: "error", text: e.message || "Failed to load admin data." });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function refreshProgressData() {
+    setRefreshingProgress(true);
+    try {
+      const [{ data: profs }, { data: s1m }, { data: s1g }, { data: s2p }] = await Promise.all([
+        supabase.from("profiles").select("id, display_name, email, is_admin, league_id"),
+        supabase.from("stage1_match_picks").select("user_id, match_id, pick"),
+        supabase.from("stage1_group_picks").select("user_id, group_code, first_place, second_place"),
+        supabase.from("stage2_picks").select("user_id, slot_id, picked_team"),
+      ]);
+      setPlayers(profs || []);
+      setAllS1MatchPicks(s1m || []);
+      setAllS1GroupPicks(s1g || []);
+      setAllS2Picks(s2p || []);
+    } catch (e) {
+      setMsg({ type: "error", text: e.message || "Failed to refresh player progress." });
+    } finally {
+      setRefreshingProgress(false);
     }
   }
 
@@ -2085,17 +2131,6 @@ function AdminPanel({ onClose, onResultsChange }) {
     }
   }
 
-  async function autoPopulateCSF() {
-    try {
-      await syncCSFSlots(standings, bracket, { force: true });
-      await loadAll();
-      if (onResultsChange) onResultsChange();
-      setMsg({ type: "success", text: "Conference Semifinals synced from Round One series winners!" });
-    } catch (e) {
-      setMsg({ type: "error", text: e.message || "Failed to sync Conference Semifinals." });
-    }
-  }
-
   async function recordStage2Result(slotId, round, winnerOpt, t1, t2) {
     try {
       const winner = winnerOpt === "team1" ? t1 : winnerOpt === "team2" ? t2 : "";
@@ -2130,101 +2165,624 @@ function AdminPanel({ onClose, onResultsChange }) {
   }
 
   const mrMap = {}; results.forEach((r) => (mrMap[r.match_id] = r));
+  const stMap = {}; standings.forEach((s) => (stMap[s.group_code] = s));
   const bracketMap = {}; bracket.forEach((b) => (bracketMap[b.match_id] = b));
 
+  const playerProgressRows = useMemo(() => {
+    const scoped = leagueId
+      ? players.filter((p) => p.league_id === leagueId || p.is_admin)
+      : players;
+
+    return scoped
+      .map((p) => {
+        const progress = calcUserPickProgress({
+          userMatchPicks: allS1MatchPicks.filter((x) => x.user_id === p.id),
+          userGroupPicks: allS1GroupPicks.filter((x) => x.user_id === p.id),
+          userStage2Picks: allS2Picks.filter((x) => x.user_id === p.id),
+        });
+        return {
+          ...p,
+          ...progress,
+        };
+      })
+      .sort((a, b) => (a.display_name || "").localeCompare(b.display_name || ""));
+  }, [players, leagueId, allS1MatchPicks, allS1GroupPicks, allS2Picks]);
+
+  const progressSummary = useMemo(() => {
+    const total = playerProgressRows.length;
+    const s1Complete = playerProgressRows.filter((r) => r.stage1.status === "complete").length;
+    const s1InProgress = playerProgressRows.filter((r) => r.stage1.status === "in_progress").length;
+    const s1NotStarted = playerProgressRows.filter((r) => r.stage1.status === "not_started").length;
+    const s2Complete = playerProgressRows.filter((r) => r.stage2.status === "complete").length;
+    const s2InProgress = playerProgressRows.filter((r) => r.stage2.status === "in_progress").length;
+    const s2NotStarted = playerProgressRows.filter((r) => r.stage2.status === "not_started").length;
+    return { total, s1Complete, s1InProgress, s1NotStarted, s2Complete, s2InProgress, s2NotStarted };
+  }, [playerProgressRows]);
+
+  const filteredProgressRows = useMemo(() => {
+    const q = progressSearch.trim().toLowerCase();
+    return playerProgressRows.filter((r) => {
+      if (progressFilter === "s1_incomplete" && r.stage1.status === "complete") return false;
+      if (progressFilter === "s2_incomplete" && r.stage2.status === "complete") return false;
+      if (progressFilter === "complete" && !(r.stage1.status === "complete" && r.stage2.status === "complete")) return false;
+      if (q) {
+        const nameMatch = (r.display_name || "").toLowerCase().includes(q);
+        const emailMatch = (r.email || "").toLowerCase().includes(q);
+        if (!nameMatch && !emailMatch) return false;
+      }
+      return true;
+    });
+  }, [playerProgressRows, progressFilter, progressSearch]);
+
+  function renderAdminTeamBtn(label, isSelected, onClick, { disabled = false } = {}) {
+    const meta = TEAM_META[label];
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={disabled ? undefined : onClick}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "8px",
+          padding: "8px 10px",
+          borderRadius: "8px",
+          border: isSelected ? `2px solid ${C.green}` : `1px solid ${C.border}`,
+          background: isSelected ? "rgba(29,158,117,0.08)" : C.white,
+          color: C.text,
+          fontSize: "13px",
+          fontWeight: isSelected ? 700 : 500,
+          cursor: disabled ? "default" : "pointer",
+          opacity: disabled ? 0.5 : 1,
+          textAlign: "left",
+        }}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+          {meta?.seed && (
+            <span style={{
+              fontSize: "10px", fontWeight: 800, padding: "1px 5px", borderRadius: "4px",
+              background: "#1a1a1a", color: "#fff", flexShrink: 0,
+            }}>#{meta.seed}</span>
+          )}
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+        </span>
+        {isSelected && <span style={{ color: C.green, fontWeight: 800, flexShrink: 0 }}>✓</span>}
+      </button>
+    );
+  }
+
+  function renderStatusBadge(status) {
+    if (status === "complete") {
+      return (
+        <span style={{
+          fontSize: "11px", fontWeight: 800, padding: "2px 8px", borderRadius: "999px",
+          background: "rgba(29,158,117,0.14)", color: C.green,
+        }}>
+          Complete
+        </span>
+      );
+    }
+    if (status === "in_progress") {
+      return (
+        <span style={{
+          fontSize: "11px", fontWeight: 800, padding: "2px 8px", borderRadius: "999px",
+          background: "rgba(217,119,6,0.14)", color: "#b45309",
+        }}>
+          In Progress
+        </span>
+      );
+    }
+    return (
+      <span style={{
+        fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "999px",
+        background: "#f1f5f9", color: C.textMuted,
+      }}>
+        Not Started
+      </span>
+    );
+  }
+
+  const adminTabs = [
+    ["results", "Stage 1 Results", CheckCircle2],
+    ["knockout", "Stage 2 Bracket", GitMerge],
+    ["progress", "Player Progress", Users],
+    ["settings", "Settings", Settings],
+  ];
+
+  const completedStage1Matches = results.filter((r) => r.stage === "group" && r.result).length;
+  const completedStage2Matches = bracket.filter((r) => r.result).length;
+
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", overflowY: "auto", zIndex: 250, padding: "2rem 1rem" }}>
-      <div style={{ maxWidth: "860px", margin: "0 auto", ...styles.card, background: C.white }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <div style={{ fontSize: "18px", fontWeight: 800 }}>Admin Panel — MLS Cup Playoffs</div>
-          <button style={styles.btnSecondary} onClick={onClose}>Close</button>
-        </div>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.68)", overflowY: "auto", zIndex: 250, padding: isMobile ? "0.75rem" : "1.75rem 1rem" }}>
+      <div style={{
+        maxWidth: "920px",
+        margin: "0 auto",
+        background: C.bg,
+        borderRadius: "16px",
+        padding: isMobile ? "0.9rem" : "1.35rem",
+        boxShadow: "0 24px 60px rgba(0,0,0,0.42)",
+        border: `1px solid ${C.border}`,
+      }}>
+        <PageBanner
+          icon={Shield}
+          badge="Admin Console"
+          title="Tournament Control Center"
+          subtitle="Record official match results, monitor player pick completeness by stage, and manage stage locks."
+          rightSlot={
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                background: "rgba(255,255,255,0.14)", color: C.white,
+                border: "1px solid rgba(255,255,255,0.28)", borderRadius: "9px",
+                padding: "8px 14px", fontSize: "13px", fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              <X size={15} />
+              <span>Close</span>
+            </button>
+          }
+        />
+
         <Alert type={msg.type} msg={msg.text} />
 
-        <div style={{ display: "flex", gap: "8px", marginBottom: "1.25rem", flexWrap: "wrap" }}>
-          {[["results", "Stage 1 Results"], ["knockout", "Stage 2 Bracket"], ["settings", "Settings"]].map(([id, label]) => (
-            <button key={id} style={styles.tab(activeTab === id)} onClick={() => setActiveTab(id)}>{label}</button>
-          ))}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "1.15rem", flexWrap: "wrap", alignItems: "center" }}>
+          {adminTabs.map(([id, label, Icon]) => {
+            const active = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                style={{
+                  ...styles.tab(active),
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                }}
+                onClick={() => setActiveTab(id)}
+              >
+                <Icon size={14} color={active ? C.navy : C.textMuted} />
+                <span>{label}</span>
+                {id === "progress" && !loading && (
+                  <span style={{
+                    fontSize: "11px", fontWeight: 800, padding: "1px 6px", borderRadius: "999px",
+                    background: active ? "rgba(255,255,255,0.18)" : "#f1f5f9",
+                    color: active ? C.white : C.text,
+                  }}>
+                    {progressSummary.total}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {loading ? <Spinner /> : (
           <>
             {activeTab === "results" && (
               <div>
-                {ALL_GROUP_MATCHES.map((m) => {
-                  const res = mrMap[m.matchId];
-                  const [t1, t2] = getResolvedMatchTeams(m, {}, mrMap);
+                <div style={{ ...styles.card, borderTop: `4px solid ${C.navy}` }}>
+                  <div style={{ ...styles.cardTitle, justifyContent: "space-between" }}>
+                    <span>Wild Card Play-In (#8 vs #9)</span>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: C.textMuted }}>
+                      {completedStage1Matches}/{ALL_GROUP_MATCHES.length} total Stage 1 results recorded
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {["WC_E", "WC_W"].map((wcId) => {
+                      const m = ALL_GROUP_MATCHES.find((x) => x.matchId === wcId);
+                      const res = mrMap[m.matchId];
+                      const [t1, t2] = getResolvedMatchTeams(m, {}, mrMap);
+                      return (
+                        <div key={m.matchId} style={{
+                          display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px",
+                          background: C.white, borderRadius: "9px", border: `1px solid ${C.border}`,
+                          flexWrap: isMobile ? "wrap" : "nowrap",
+                        }}>
+                          <span style={{ fontSize: "11px", fontWeight: 800, minWidth: "72px", color: C.textMuted }}>
+                            {m.matchId === "WC_E" ? "EAST WC" : "WEST WC"}
+                          </span>
+                          {renderAdminTeamBtn(t1, res?.result === "team1", () => recordStage1Result(m, res?.result === "team1" ? null : "team1"))}
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted }}>vs</span>
+                          {renderAdminTeamBtn(t2, res?.result === "team2", () => recordStage1Result(m, res?.result === "team2" ? null : "team2"))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {[
+                  { title: "Eastern Conference — Round One Best-of-3", prefix: "E_", border: C.navyMid },
+                  { title: "Western Conference — Round One Best-of-3", prefix: "W_", border: C.navy },
+                ].map(({ title, prefix, border }) => (
+                  <div key={prefix} style={{ ...styles.card, borderTop: `4px solid ${border}` }}>
+                    <div style={styles.cardTitle}>{title}</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {Object.keys(GROUPS).filter((sId) => sId.startsWith(prefix)).map((seriesId) => {
+                        const sMatches = ALL_GROUP_MATCHES.filter((m) => m.group === seriesId);
+                        const st = stMap[seriesId];
+                        return (
+                          <div key={seriesId} style={{
+                            padding: "10px 12px", background: C.white, borderRadius: "10px",
+                            border: `1px solid ${C.border}`,
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexWrap: "wrap", gap: "6px" }}>
+                              <span style={{ fontSize: "13px", fontWeight: 800, color: C.text }}>{SERIES_LABELS[seriesId]}</span>
+                              {st?.first_place ? (
+                                <span style={styles.badge(C.white, C.green)}>
+                                  ✓ {st.first_place} ({st.second_place})
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: "11px", fontWeight: 600, color: C.textMuted }}>Series In Progress</span>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                              {sMatches.map((m) => {
+                                const res = mrMap[m.matchId];
+                                const [t1, t2] = getResolvedMatchTeams(m, {}, mrMap);
+                                return (
+                                  <div key={m.matchId} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                    <span style={{ fontSize: "11px", fontWeight: 700, minWidth: "56px", color: C.textMuted }}>
+                                      Game {m.gameNum}
+                                    </span>
+                                    {renderAdminTeamBtn(t1, res?.result === "team1", () => recordStage1Result(m, res?.result === "team1" ? null : "team1"))}
+                                    <span style={{ fontSize: "11px", color: C.textMuted }}>vs</span>
+                                    {renderAdminTeamBtn(t2, res?.result === "team2", () => recordStage1Result(m, res?.result === "team2" ? null : "team2"))}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === "knockout" && (
+              <div>
+                {KNOCKOUT_ROUNDS.map(({ round, label, slots }) => {
+                  const accent = round === "CUP" ? "#d97706" : round === "CF" ? C.navyMid : C.navy;
                   return (
-                    <div key={m.matchId} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", borderBottom: `1px solid ${C.border}` }}>
-                      <span style={{ fontSize: "11px", fontWeight: 700, minWidth: "70px", color: C.textMuted }}>{m.matchId}</span>
-                      <button
-                        onClick={() => recordStage1Result(m, res?.result === "team1" ? null : "team1")}
-                        style={{ flex: 1, padding: "7px", borderRadius: "6px", border: res?.result === "team1" ? `2px solid ${C.green}` : `1px solid ${C.border}`, fontWeight: res?.result === "team1" ? 700 : 400, cursor: "pointer", background: C.white }}
-                      >{t1}</button>
-                      <span style={{ fontSize: "11px", color: C.textMuted }}>vs</span>
-                      <button
-                        onClick={() => recordStage1Result(m, res?.result === "team2" ? null : "team2")}
-                        style={{ flex: 1, padding: "7px", borderRadius: "6px", border: res?.result === "team2" ? `2px solid ${C.green}` : `1px solid ${C.border}`, fontWeight: res?.result === "team2" ? 700 : 400, cursor: "pointer", background: C.white }}
-                      >{t2}</button>
+                    <div key={round} style={{ ...styles.card, borderTop: `4px solid ${accent}` }}>
+                      <div style={{ ...styles.cardTitle, justifyContent: "space-between" }}>
+                        <span>{label}</span>
+                        {round === "CSF" && (
+                          <span style={{ fontSize: "12px", fontWeight: 600, color: C.textMuted }}>
+                            ✓ Auto-synced from Round 1 · {completedStage2Matches}/7 results entered
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {Array.from({ length: slots }, (_, i) => {
+                          const slotId = `${round}_${i + 1}`;
+                          const slot = bracketMap[slotId] || {};
+                          const t1 = slot.team1 || "TBD";
+                          const t2 = slot.team2 || "TBD";
+                          const notReady = t1 === "TBD" || t2 === "TBD";
+                          return (
+                            <div key={slotId} style={{
+                              padding: "9px 11px", background: C.white, borderRadius: "9px",
+                              border: `1px solid ${C.border}`,
+                            }}>
+                              <div style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted, marginBottom: "6px" }}>
+                                {SLOT_LABELS[slotId] || slotId}
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                {renderAdminTeamBtn(
+                                  t1,
+                                  slot.result === "team1",
+                                  () => recordStage2Result(slotId, round, slot.result === "team1" ? null : "team1", t1, t2),
+                                  { disabled: notReady }
+                                )}
+                                <span style={{ fontSize: "11px", fontWeight: 700, color: C.textMuted }}>vs</span>
+                                {renderAdminTeamBtn(
+                                  t2,
+                                  slot.result === "team2",
+                                  () => recordStage2Result(slotId, round, slot.result === "team2" ? null : "team2", t1, t2),
+                                  { disabled: notReady }
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
 
-            {activeTab === "knockout" && (
+            {activeTab === "progress" && (
               <div>
-                <button style={{ ...styles.btnPrimary, marginBottom: "1rem" }} onClick={autoPopulateCSF}>
-                  ⚡ Auto-fill Conf. Semis from Round 1 Winners
-                </button>
-                {KNOCKOUT_ROUNDS.map(({ round, label, slots }) => (
-                  <div key={round} style={{ marginBottom: "1.25rem" }}>
-                    <div style={{ fontWeight: 700, marginBottom: "8px" }}>{label}</div>
-                    {Array.from({ length: slots }, (_, i) => {
-                      const slotId = `${round}_${i + 1}`;
-                      const slot = bracketMap[slotId] || {};
-                      const t1 = slot.team1 || "TBD";
-                      const t2 = slot.team2 || "TBD";
-                      const notReady = t1 === "TBD" || t2 === "TBD";
-                      return (
-                        <div key={slotId} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                          <span style={{ fontSize: "11px", minWidth: "60px", color: C.textMuted }}>{slotId}</span>
-                          <button
-                            disabled={notReady}
-                            onClick={() => recordStage2Result(slotId, round, slot.result === "team1" ? null : "team1", t1, t2)}
-                            style={{ flex: 1, padding: "8px", borderRadius: "6px", border: slot.result === "team1" ? `2px solid ${C.green}` : `1px solid ${C.border}`, fontWeight: slot.result === "team1" ? 700 : 400, cursor: notReady ? "default" : "pointer", opacity: notReady ? 0.5 : 1, background: C.white }}
-                          >{t1}</button>
-                          <span>vs</span>
-                          <button
-                            disabled={notReady}
-                            onClick={() => recordStage2Result(slotId, round, slot.result === "team2" ? null : "team2", t1, t2)}
-                            style={{ flex: 1, padding: "8px", borderRadius: "6px", border: slot.result === "team2" ? `2px solid ${C.green}` : `1px solid ${C.border}`, fontWeight: slot.result === "team2" ? 700 : 400, cursor: notReady ? "default" : "pointer", opacity: notReady ? 0.5 : 1, background: C.white }}
-                          >{t2}</button>
-                        </div>
-                      );
-                    })}
+                {/* Stage Completeness Summary */}
+                <div style={{ ...styles.card, borderTop: `4px solid ${C.navy}` }}>
+                  <div style={{ ...styles.cardTitle, justifyContent: "space-between", marginBottom: "0.85rem" }}>
+                    <span>League Pick Completeness Overview</span>
+                    <button
+                      type="button"
+                      onClick={refreshProgressData}
+                      disabled={refreshingProgress}
+                      style={{
+                        ...styles.btnSecondary,
+                        background: C.white,
+                        padding: "6px 12px",
+                        fontSize: "12.5px",
+                        fontWeight: 700,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <RefreshCw size={13} />
+                      <span>{refreshingProgress ? "Refreshing..." : "Refresh"}</span>
+                    </button>
                   </div>
-                ))}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "10px" }}>
+                    <div style={{
+                      padding: "12px 14px", borderRadius: "10px", background: C.white,
+                      border: `1px solid ${C.border}`, borderLeft: `4px solid ${C.navyMid}`,
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                    }}>
+                      <div style={{ fontSize: "10.5px", fontWeight: 800, color: C.textMuted, letterSpacing: "0.05em", marginBottom: "4px" }}>REGISTERED PLAYERS</div>
+                      <div style={{ fontSize: "1.65rem", fontWeight: 800, color: C.text }}>{progressSummary.total}</div>
+                      <div style={{ fontSize: "11.5px", color: C.textMuted, marginTop: "2px" }}>Active league members</div>
+                    </div>
+
+                    <div style={{
+                      padding: "12px 14px", borderRadius: "10px", background: C.white,
+                      border: `1px solid ${C.border}`, borderLeft: `4px solid ${C.green}`,
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                    }}>
+                      <div style={{ fontSize: "10.5px", fontWeight: 800, color: C.textMuted, letterSpacing: "0.05em", marginBottom: "4px" }}>STAGE 1 COMPLETE</div>
+                      <div style={{ fontSize: "1.65rem", fontWeight: 800, color: C.text }}>
+                        {progressSummary.s1Complete}
+                        <span style={{ fontSize: "1rem", fontWeight: 600, color: C.textMuted }}> / {progressSummary.total}</span>
+                      </div>
+                      <div style={{ fontSize: "11.5px", color: C.textMuted, marginTop: "2px" }}>
+                        {progressSummary.s1InProgress} in progress · {progressSummary.s1NotStarted} not started
+                      </div>
+                    </div>
+
+                    <div style={{
+                      padding: "12px 14px", borderRadius: "10px", background: C.white,
+                      border: `1px solid ${C.border}`, borderLeft: "4px solid #d97706",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                    }}>
+                      <div style={{ fontSize: "10.5px", fontWeight: 800, color: C.textMuted, letterSpacing: "0.05em", marginBottom: "4px" }}>STAGE 2 COMPLETE</div>
+                      <div style={{ fontSize: "1.65rem", fontWeight: 800, color: C.text }}>
+                        {progressSummary.s2Complete}
+                        <span style={{ fontSize: "1rem", fontWeight: 600, color: C.textMuted }}> / {progressSummary.total}</span>
+                      </div>
+                      <div style={{ fontSize: "11.5px", color: C.textMuted, marginTop: "2px" }}>
+                        {progressSummary.s2InProgress} in progress · {progressSummary.s2NotStarted} not started
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Per-Player Stage Breakdown */}
+                <div style={{ ...styles.card, borderTop: `4px solid ${C.navyMid}` }}>
+                  <div style={{ ...styles.cardTitle, justifyContent: "space-between", marginBottom: "0.85rem" }}>
+                    <span>Player-by-Player Progress</span>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: C.textMuted }}>
+                      Showing {filteredProgressRows.length} of {playerProgressRows.length}
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginBottom: "0.9rem" }}>
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                      {[
+                        ["all", "All"],
+                        ["s1_incomplete", "Missing Stage 1"],
+                        ["s2_incomplete", "Missing Stage 2"],
+                        ["complete", "Both Complete"],
+                      ].map(([key, label]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setProgressFilter(key)}
+                          style={{ ...styles.tab(progressFilter === key), padding: "6px 12px", fontSize: "12px" }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      value={progressSearch}
+                      onChange={(e) => setProgressSearch(e.target.value)}
+                      placeholder="Filter by name or email..."
+                      style={{ ...styles.input, width: isMobile ? "100%" : "220px", padding: "7px 12px", fontSize: "12.5px" }}
+                    />
+                  </div>
+
+                  {filteredProgressRows.length === 0 ? (
+                    <div style={{
+                      padding: "1.5rem", textAlign: "center", background: C.white,
+                      borderRadius: "10px", border: `1px solid ${C.border}`, fontSize: "13px", color: C.textMuted,
+                    }}>
+                      No players match the current filter.
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {filteredProgressRows.map((p) => (
+                        <div key={p.id} style={{
+                          padding: "12px 14px",
+                          background: C.white,
+                          borderRadius: "10px",
+                          border: `1px solid ${C.border}`,
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
+                            <div>
+                              <span style={{ fontSize: "14px", fontWeight: 800, color: C.text }}>
+                                {p.display_name || "Unnamed Player"}
+                              </span>
+                              {p.is_admin && (
+                                <span style={{
+                                  marginLeft: "8px", fontSize: "10px", fontWeight: 800,
+                                  padding: "2px 6px", borderRadius: "4px",
+                                  background: C.navyMid, color: C.navy, verticalAlign: "middle",
+                                }}>
+                                  ADMIN
+                                </span>
+                              )}
+                              {p.email && (
+                                <span style={{ marginLeft: "8px", fontSize: "12px", color: C.textMuted }}>{p.email}</span>
+                              )}
+                            </div>
+                            {p.stage2.championPick && (
+                              <span style={{
+                                fontSize: "11.5px", fontWeight: 700, padding: "2px 9px", borderRadius: "999px",
+                                background: "rgba(217,119,6,0.12)", color: "#b45309",
+                                display: "inline-flex", alignItems: "center", gap: "4px",
+                              }}>
+                                <Trophy size={11} />
+                                Champ: {p.stage2.championPick}
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px" }}>
+                            {/* Stage 1 Progress */}
+                            <div style={{ padding: "8px 10px", borderRadius: "8px", background: "#fcfaf8", border: "1px solid #eadfd5" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
+                                <span style={{ fontSize: "12px", fontWeight: 700, color: C.text }}>
+                                  Stage 1: Play-In / Conf QF
+                                </span>
+                                {renderStatusBadge(p.stage1.status)}
+                              </div>
+                              <div style={{ height: "7px", background: "#e5e7eb", borderRadius: "999px", overflow: "hidden", marginBottom: "5px" }}>
+                                <div style={{
+                                  width: `${p.stage1.pct}%`,
+                                  height: "100%",
+                                  background: p.stage1.status === "complete" ? C.green : C.navy,
+                                  borderRadius: "999px",
+                                  transition: "width 0.2s ease",
+                                }} />
+                              </div>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11.5px", color: C.textMuted }}>
+                                <span>WC {p.stage1.wcDone}/{p.stage1.wcTotal} · Series {p.stage1.seriesDone}/{p.stage1.seriesTotal}</span>
+                                <strong style={{ color: C.text }}>{p.stage1.pct}%</strong>
+                              </div>
+                              {p.stage1.status !== "complete" && (p.stage1.missingWC.length > 0 || p.stage1.missingSeries.length > 0) && (
+                                <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "4px" }}>
+                                  Missing: {[...p.stage1.missingWC, ...p.stage1.missingSeries].join(", ")}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Stage 2 Progress */}
+                            <div style={{ padding: "8px 10px", borderRadius: "8px", background: "#fcfaf8", border: "1px solid #eadfd5" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
+                                <span style={{ fontSize: "12px", fontWeight: 700, color: C.text }}>
+                                  Stage 2: Final 8 Bracket
+                                </span>
+                                {renderStatusBadge(p.stage2.status)}
+                              </div>
+                              <div style={{ height: "7px", background: "#e5e7eb", borderRadius: "999px", overflow: "hidden", marginBottom: "5px" }}>
+                                <div style={{
+                                  width: `${p.stage2.pct}%`,
+                                  height: "100%",
+                                  background: p.stage2.status === "complete" ? C.green : "#d97706",
+                                  borderRadius: "999px",
+                                  transition: "width 0.2s ease",
+                                }} />
+                              </div>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11.5px", color: C.textMuted }}>
+                                <span>Bracket Slots {p.stage2.done}/{p.stage2.total}</span>
+                                <strong style={{ color: C.text }}>{p.stage2.pct}%</strong>
+                              </div>
+                              {p.stage2.status !== "complete" && p.stage2.missingSlots.length > 0 && (
+                                <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "4px" }}>
+                                  Missing: {p.stage2.missingSlots.join(", ")}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             {activeTab === "settings" && (
-              <div>
-                {[
-                  { key: "registration_open", label: "Registration Open (Allow new sign-ups)" },
-                  { key: "stage1_locked", label: "Lock Stage 1 (Wild Card & Round One Picks)" },
-                  { key: "stage2_open", label: "Open Stage 2 (Final 8 Knockout Bracket Picks)" },
-                  { key: "stage2_locked", label: "Lock Stage 2 (Final 8 Knockout Bracket)" },
-                ].map(({ key, label }) => (
-                  <div key={key} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
-                    <span>{label}</span>
-                    <input
-                      type="checkbox"
-                      checked={settings[key] === "true"}
-                      onChange={(e) => updateSetting(key, e.target.checked ? "true" : "false")}
-                    />
-                  </div>
-                ))}
+              <div style={{ ...styles.card, borderTop: `4px solid ${C.navyMid}` }}>
+                <div style={styles.cardTitle}>Tournament Phase &amp; Access Controls</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {[
+                    {
+                      key: "registration_open",
+                      label: "Registration Open",
+                      desc: "Allow new players to register an account using your league invite code.",
+                      onText: "OPEN",
+                      offText: "CLOSED",
+                      onColor: C.green,
+                    },
+                    {
+                      key: "stage1_locked",
+                      label: "Lock Stage 1 (Play-In / Conf QF)",
+                      desc: "Freeze all Wild Card & Round One picks and unlock Stage 1 Insights.",
+                      onText: "LOCKED",
+                      offText: "OPEN",
+                      onColor: "#d97706",
+                    },
+                    {
+                      key: "stage2_open",
+                      label: "Open Stage 2 (Final 8 Bracket)",
+                      desc: "Allow players to view and select their Conference Semifinal → MLS Cup bracket.",
+                      onText: "OPEN",
+                      offText: "HIDDEN",
+                      onColor: C.green,
+                    },
+                    {
+                      key: "stage2_locked",
+                      label: "Lock Stage 2 (Final 8 Bracket)",
+                      desc: "Freeze all Final 8 Bracket picks and unlock Stage 2 Insights.",
+                      onText: "LOCKED",
+                      offText: "OPEN",
+                      onColor: "#d97706",
+                    },
+                  ].map(({ key, label, desc, onText, offText, onColor }) => {
+                    const enabled = settings[key] === "true";
+                    return (
+                      <div key={key} style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px",
+                        padding: "12px 14px", background: C.white, borderRadius: "10px",
+                        border: `1px solid ${C.border}`,
+                      }}>
+                        <div>
+                          <div style={{ fontSize: "14px", fontWeight: 700, color: C.text }}>{label}</div>
+                          <div style={{ fontSize: "12px", color: C.textMuted, marginTop: "2px" }}>{desc}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => updateSetting(key, enabled ? "false" : "true")}
+                          style={{
+                            minWidth: "92px",
+                            padding: "7px 14px",
+                            borderRadius: "8px",
+                            border: `1.5px solid ${enabled ? onColor : C.border}`,
+                            background: enabled ? onColor : "#f8fafc",
+                            color: enabled ? C.white : C.textMuted,
+                            fontSize: "12px",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {enabled ? onText : offText}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </>
@@ -2409,6 +2967,7 @@ export default function App() {
 
       {showAdmin && (
         <AdminPanel
+          leagueId={leagueId}
           onClose={() => setShowAdmin(false)}
           onResultsChange={async () => {
             await refreshAllData(session.user.id);
