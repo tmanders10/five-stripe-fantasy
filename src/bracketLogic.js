@@ -15,22 +15,22 @@ export const SCORING_RULES = {
   },
 };
 
-// ── 2. TOURNAMENT DATA (MLS CUP PLAYOFFS) ────────────────────────────────────
+// ── 2. TOURNAMENT DATA (2026 AUDI MLS CUP PLAYOFFS) ───────────────────────────
 export const WILD_CARDS = {
-  WC_E: { matchId: "WC_E", conf: "EAST", label: "East Wild Card (#8 vs #9)", seed8: "CF Montréal", seed9: "Atlanta United", date: "Oct 22", time: "7:30 PM ET" },
-  WC_W: { matchId: "WC_W", conf: "WEST", label: "West Wild Card (#8 vs #9)", seed8: "Vancouver Whitecaps", seed9: "Portland Timbers", date: "Oct 23", time: "10:30 PM ET" },
+  WC_E: { matchId: "WC_E", conf: "EAST", label: "East Wild Card (#8 vs #9)", seed8: "Orlando City", seed9: "FC Cincinnati", date: "Nov 19", time: "7:30 PM ET" },
+  WC_W: { matchId: "WC_W", conf: "WEST", label: "West Wild Card (#8 vs #9)", seed8: "Seattle Sounders", seed9: "Real Salt Lake", date: "Nov 19", time: "10:00 PM ET" },
 };
 
 // 8 Best-of-3 Round One Series (stored in group_code)
 export const GROUPS = {
-  E_S1: ["Inter Miami", "East Wild Card Winner"],
-  E_S2: ["Columbus Crew", "NY Red Bulls"],
-  E_S3: ["FC Cincinnati", "NYCFC"],
-  E_S4: ["Orlando City", "Charlotte FC"],
-  W_S1: ["LAFC", "West Wild Card Winner"],
-  W_S2: ["LA Galaxy", "Colorado Rapids"],
-  W_S3: ["Real Salt Lake", "Minnesota United"],
-  W_S4: ["Seattle Sounders", "Houston Dynamo"],
+  E_S1: ["Nashville SC", "East Wild Card Winner"],
+  E_S2: ["Inter Miami", "Columbus Crew"],
+  E_S3: ["New England Revolution", "Philadelphia Union"],
+  E_S4: ["Chicago Fire", "Charlotte FC"],
+  W_S1: ["Vancouver Whitecaps", "West Wild Card Winner"],
+  W_S2: ["FC Dallas", "Portland Timbers"],
+  W_S3: ["St. Louis CITY SC", "LAFC"],
+  W_S4: ["San Jose Earthquakes", "Houston Dynamo"],
 };
 
 export const SERIES_LABELS = {
@@ -47,56 +47,55 @@ export const SERIES_LABELS = {
 };
 
 export const ALL_TEAMS = [
-  "Inter Miami", "Columbus Crew", "FC Cincinnati", "Orlando City",
-  "Charlotte FC", "NYCFC", "NY Red Bulls", "CF Montréal", "Atlanta United",
-  "LAFC", "LA Galaxy", "Real Salt Lake", "Seattle Sounders",
-  "Houston Dynamo", "Minnesota United", "Colorado Rapids", "Vancouver Whitecaps", "Portland Timbers",
+  "Nashville SC", "Inter Miami", "New England Revolution", "Chicago Fire",
+  "Charlotte FC", "Philadelphia Union", "Columbus Crew", "Orlando City", "FC Cincinnati",
+  "Vancouver Whitecaps", "FC Dallas", "St. Louis CITY SC", "San Jose Earthquakes",
+  "Houston Dynamo", "LAFC", "Portland Timbers", "Seattle Sounders", "Real Salt Lake",
 ].sort();
 
 export const COUNTRY_ABBR = {
-  "Inter Miami": "MIA", "Columbus Crew": "CLB", "FC Cincinnati": "CIN", "Orlando City": "ORL",
-  "Charlotte FC": "CLT", "NYCFC": "NYC", "NY Red Bulls": "RBNY", "CF Montréal": "MTL", "Atlanta United": "ATL",
-  "LAFC": "LAFC", "LA Galaxy": "LA", "Real Salt Lake": "RSL", "Seattle Sounders": "SEA",
-  "Houston Dynamo": "HOU", "Minnesota United": "MIN", "Colorado Rapids": "COL",
-  "Vancouver Whitecaps": "VAN", "Portland Timbers": "POR",
+  "Nashville SC": "NSH", "Inter Miami": "MIA", "New England Revolution": "NE", "Chicago Fire": "CHI",
+  "Charlotte FC": "CLT", "Philadelphia Union": "PHI", "Columbus Crew": "CLB", "Orlando City": "ORL", "FC Cincinnati": "CIN",
+  "Vancouver Whitecaps": "VAN", "FC Dallas": "DAL", "St. Louis CITY SC": "STL", "San Jose Earthquakes": "SJ",
+  "Houston Dynamo": "HOU", "LAFC": "LAFC", "Portland Timbers": "POR", "Seattle Sounders": "SEA", "Real Salt Lake": "RSL",
   "East Wild Card Winner": "E-WC", "West Wild Card Winner": "W-WC",
 };
 
 // All 26 Stage 1 fixtures (2 Wild Card matches + 24 Round One Best-of-3 games)
 export const ALL_GROUP_MATCHES = [
   // Wild Card Round
-  { matchId: "WC_E",    group: "WC_E", isWildCard: true,  gameNum: 1, team1: "CF Montréal",           team2: "Atlanta United",        date: "Oct 22", time: "7:30 PM ET" },
-  { matchId: "WC_W",    group: "WC_W", isWildCard: true,  gameNum: 1, team1: "Vancouver Whitecaps",   team2: "Portland Timbers",      date: "Oct 23", time: "10:30 PM ET" },
+  { matchId: "WC_E",    group: "WC_E", isWildCard: true,  gameNum: 1, team1: "Orlando City",           team2: "FC Cincinnati",         date: "Nov 19", time: "7:30 PM ET" },
+  { matchId: "WC_W",    group: "WC_W", isWildCard: true,  gameNum: 1, team1: "Seattle Sounders",       team2: "Real Salt Lake",        date: "Nov 19", time: "10:00 PM ET" },
 
   // Round One — Game 1 (Higher Seed Hosts)
-  { matchId: "E_S1_G1", group: "E_S1", isWildCard: false, gameNum: 1, team1: "Inter Miami",           team2: "East Wild Card Winner", date: "Oct 25", time: "8:30 PM ET" },
-  { matchId: "W_S2_G1", group: "W_S2", isWildCard: false, gameNum: 1, team1: "LA Galaxy",             team2: "Colorado Rapids",       date: "Oct 26", time: "11:00 PM ET" },
-  { matchId: "E_S4_G1", group: "E_S4", isWildCard: false, gameNum: 1, team1: "Orlando City",          team2: "Charlotte FC",          date: "Oct 27", time: "7:30 PM ET" },
-  { matchId: "W_S1_G1", group: "W_S1", isWildCard: false, gameNum: 1, team1: "LAFC",                  team2: "West Wild Card Winner", date: "Oct 27", time: "9:45 PM ET" },
-  { matchId: "E_S3_G1", group: "E_S3", isWildCard: false, gameNum: 1, team1: "FC Cincinnati",         team2: "NYCFC",                 date: "Oct 28", time: "6:45 PM ET" },
-  { matchId: "W_S4_G1", group: "W_S4", isWildCard: false, gameNum: 1, team1: "Seattle Sounders",      team2: "Houston Dynamo",        date: "Oct 28", time: "9:00 PM ET" },
-  { matchId: "E_S2_G1", group: "E_S2", isWildCard: false, gameNum: 1, team1: "Columbus Crew",         team2: "NY Red Bulls",          date: "Oct 29", time: "6:45 PM ET" },
-  { matchId: "W_S3_G1", group: "W_S3", isWildCard: false, gameNum: 1, team1: "Real Salt Lake",        team2: "Minnesota United",      date: "Oct 29", time: "9:00 PM ET" },
+  { matchId: "E_S3_G1", group: "E_S3", isWildCard: false, gameNum: 1, team1: "New England Revolution", team2: "Philadelphia Union",    date: "Nov 21", time: "2:00 PM ET" },
+  { matchId: "W_S2_G1", group: "W_S2", isWildCard: false, gameNum: 1, team1: "FC Dallas",              team2: "Portland Timbers",      date: "Nov 21", time: "4:00 PM ET" },
+  { matchId: "E_S2_G1", group: "E_S2", isWildCard: false, gameNum: 1, team1: "Inter Miami",            team2: "Columbus Crew",         date: "Nov 21", time: "6:00 PM ET" },
+  { matchId: "E_S1_G1", group: "E_S1", isWildCard: false, gameNum: 1, team1: "Nashville SC",           team2: "East Wild Card Winner", date: "Nov 22", time: "4:00 PM ET" },
+  { matchId: "E_S4_G1", group: "E_S4", isWildCard: false, gameNum: 1, team1: "Chicago Fire",           team2: "Charlotte FC",          date: "Nov 22", time: "6:30 PM ET" },
+  { matchId: "W_S1_G1", group: "W_S1", isWildCard: false, gameNum: 1, team1: "Vancouver Whitecaps",    team2: "West Wild Card Winner", date: "Nov 22", time: "9:30 PM ET" },
+  { matchId: "W_S3_G1", group: "W_S3", isWildCard: false, gameNum: 1, team1: "St. Louis CITY SC",      team2: "LAFC",                  date: "Nov 23", time: "8:00 PM ET" },
+  { matchId: "W_S4_G1", group: "W_S4", isWildCard: false, gameNum: 1, team1: "San Jose Earthquakes",   team2: "Houston Dynamo",        date: "Nov 24", time: "10:00 PM ET" },
 
   // Round One — Game 2 (Lower Seed Hosts)
-  { matchId: "E_S4_G2", group: "E_S4", isWildCard: false, gameNum: 2, team1: "Charlotte FC",          team2: "Orlando City",          date: "Nov 1",  time: "7:30 PM ET" },
-  { matchId: "W_S2_G2", group: "W_S2", isWildCard: false, gameNum: 2, team1: "Colorado Rapids",       team2: "LA Galaxy",             date: "Nov 1",  time: "9:30 PM ET" },
-  { matchId: "E_S3_G2", group: "E_S3", isWildCard: false, gameNum: 2, team1: "NYCFC",                 team2: "FC Cincinnati",         date: "Nov 2",  time: "5:00 PM ET" },
-  { matchId: "E_S1_G2", group: "E_S1", isWildCard: false, gameNum: 2, team1: "East Wild Card Winner", team2: "Inter Miami",           date: "Nov 2",  time: "7:00 PM ET" },
-  { matchId: "W_S3_G2", group: "W_S3", isWildCard: false, gameNum: 2, team1: "Minnesota United",      team2: "Real Salt Lake",        date: "Nov 2",  time: "9:00 PM ET" },
-  { matchId: "E_S2_G2", group: "E_S2", isWildCard: false, gameNum: 2, team1: "NY Red Bulls",          team2: "Columbus Crew",         date: "Nov 3",  time: "4:30 PM ET" },
-  { matchId: "W_S4_G2", group: "W_S4", isWildCard: false, gameNum: 2, team1: "Houston Dynamo",        team2: "Seattle Sounders",      date: "Nov 3",  time: "6:30 PM ET" },
-  { matchId: "W_S1_G2", group: "W_S1", isWildCard: false, gameNum: 2, team1: "West Wild Card Winner", team2: "LAFC",                  date: "Nov 3",  time: "8:45 PM ET" },
+  { matchId: "E_S2_G2", group: "E_S2", isWildCard: false, gameNum: 2, team1: "Columbus Crew",          team2: "Inter Miami",           date: "Nov 27", time: "8:00 PM ET" },
+  { matchId: "W_S1_G2", group: "W_S1", isWildCard: false, gameNum: 2, team1: "West Wild Card Winner",  team2: "Vancouver Whitecaps",   date: "Nov 27", time: "10:00 PM ET" },
+  { matchId: "E_S4_G2", group: "E_S4", isWildCard: false, gameNum: 2, team1: "Charlotte FC",           team2: "Chicago Fire",          date: "Nov 28", time: "12:30 PM ET" },
+  { matchId: "W_S4_G2", group: "W_S4", isWildCard: false, gameNum: 2, team1: "Houston Dynamo",         team2: "San Jose Earthquakes",  date: "Nov 28", time: "2:30 PM ET" },
+  { matchId: "E_S3_G2", group: "E_S3", isWildCard: false, gameNum: 2, team1: "Philadelphia Union",     team2: "New England Revolution",date: "Nov 28", time: "4:30 PM ET" },
+  { matchId: "E_S1_G2", group: "E_S1", isWildCard: false, gameNum: 2, team1: "East Wild Card Winner",  team2: "Nashville SC",          date: "Nov 28", time: "6:30 PM ET" },
+  { matchId: "W_S3_G2", group: "W_S3", isWildCard: false, gameNum: 2, team1: "LAFC",                   team2: "St. Louis CITY SC",     date: "Nov 28", time: "8:30 PM ET" },
+  { matchId: "W_S2_G2", group: "W_S2", isWildCard: false, gameNum: 2, team1: "Portland Timbers",       team2: "FC Dallas",             date: "Nov 28", time: "10:30 PM ET" },
 
   // Round One — Game 3 (If Necessary — Higher Seed Hosts)
-  { matchId: "W_S1_G3", group: "W_S1", isWildCard: false, gameNum: 3, team1: "LAFC",                  team2: "West Wild Card Winner", date: "Nov 8",  time: "10:00 PM ET" },
-  { matchId: "E_S3_G3", group: "E_S3", isWildCard: false, gameNum: 3, team1: "FC Cincinnati",         team2: "NYCFC",                 date: "Nov 9",  time: "4:00 PM ET" },
-  { matchId: "E_S4_G3", group: "E_S4", isWildCard: false, gameNum: 3, team1: "Orlando City",          team2: "Charlotte FC",          date: "Nov 9",  time: "6:00 PM ET" },
-  { matchId: "E_S1_G3", group: "E_S1", isWildCard: false, gameNum: 3, team1: "Inter Miami",           team2: "East Wild Card Winner", date: "Nov 9",  time: "8:00 PM ET" },
-  { matchId: "E_S2_G3", group: "E_S2", isWildCard: false, gameNum: 3, team1: "Columbus Crew",         team2: "NY Red Bulls",          date: "Nov 10", time: "5:00 PM ET" },
-  { matchId: "W_S3_G3", group: "W_S3", isWildCard: false, gameNum: 3, team1: "Real Salt Lake",        team2: "Minnesota United",      date: "Nov 10", time: "7:00 PM ET" },
-  { matchId: "W_S2_G3", group: "W_S2", isWildCard: false, gameNum: 3, team1: "LA Galaxy",             team2: "Colorado Rapids",       date: "Nov 10", time: "9:00 PM ET" },
-  { matchId: "W_S4_G3", group: "W_S4", isWildCard: false, gameNum: 3, team1: "Seattle Sounders",      team2: "Houston Dynamo",        date: "Nov 10", time: "10:30 PM ET" },
+  { matchId: "E_S2_G3", group: "E_S2", isWildCard: false, gameNum: 3, team1: "Inter Miami",            team2: "Columbus Crew",         date: "Dec 1/2", time: "Time TBD" },
+  { matchId: "E_S1_G3", group: "E_S1", isWildCard: false, gameNum: 3, team1: "Nashville SC",           team2: "East Wild Card Winner", date: "Dec 2",   time: "Time TBD" },
+  { matchId: "E_S3_G3", group: "E_S3", isWildCard: false, gameNum: 3, team1: "New England Revolution", team2: "Philadelphia Union",    date: "Dec 2",   time: "Time TBD" },
+  { matchId: "E_S4_G3", group: "E_S4", isWildCard: false, gameNum: 3, team1: "Chicago Fire",           team2: "Charlotte FC",          date: "Dec 2",   time: "Time TBD" },
+  { matchId: "W_S1_G3", group: "W_S1", isWildCard: false, gameNum: 3, team1: "Vancouver Whitecaps",    team2: "West Wild Card Winner", date: "Dec 2",   time: "Time TBD" },
+  { matchId: "W_S2_G3", group: "W_S2", isWildCard: false, gameNum: 3, team1: "FC Dallas",              team2: "Portland Timbers",      date: "Dec 2",   time: "Time TBD" },
+  { matchId: "W_S3_G3", group: "W_S3", isWildCard: false, gameNum: 3, team1: "St. Louis CITY SC",      team2: "LAFC",                  date: "Dec 2",   time: "Time TBD" },
+  { matchId: "W_S4_G3", group: "W_S4", isWildCard: false, gameNum: 3, team1: "San Jose Earthquakes",   team2: "Houston Dynamo",        date: "Dec 2",   time: "Time TBD" },
 ];
 
 export const KNOCKOUT_ROUNDS = [

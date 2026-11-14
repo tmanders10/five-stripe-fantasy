@@ -41,26 +41,29 @@ const supabase = hasSupabaseConfig ? createClient(SUPABASE_URL, SUPABASE_ANON) :
 // ── 1 & 2. TOURNAMENT DATA & SCORING RULES (IMPORTED FROM ./bracketLogic.js) ─
 
 const TEAM_META = {
-  "Inter Miami":            { seed: 1, regPts: 74, flag: "us", c1: "rgba(247,181,205,0.55)", c2: "rgba(35,31,32,0.45)",    c3: "rgba(247,181,205,0.55)", border: "#f7b5cd" },
-  "Columbus Crew":          { seed: 2, regPts: 66, flag: "us", c1: "rgba(254,209,0,0.55)",   c2: "rgba(0,0,0,0.45)",       c3: "rgba(254,209,0,0.55)",   border: "#e5b800" },
-  "FC Cincinnati":          { seed: 3, regPts: 59, flag: "us", c1: "rgba(0,48,135,0.45)",    c2: "rgba(254,80,0,0.50)",    c3: "rgba(0,48,135,0.45)",    border: "#fe5000" },
-  "Orlando City":           { seed: 4, regPts: 52, flag: "us", c1: "rgba(99,52,146,0.48)",   c2: "rgba(240,210,131,0.48)", c3: "rgba(99,52,146,0.48)",   border: "#633492" },
-  "Charlotte FC":           { seed: 5, regPts: 51, flag: "us", c1: "rgba(0,133,202,0.48)",   c2: "rgba(16,24,32,0.40)",    c3: "rgba(0,133,202,0.48)",   border: "#0085ca" },
-  "NYCFC":                  { seed: 6, regPts: 50, flag: "us", c1: "rgba(108,173,223,0.52)", c2: "rgba(4,30,66,0.42)",     c3: "rgba(241,85,36,0.45)",   border: "#6caddf" },
-  "NY Red Bulls":           { seed: 7, regPts: 47, flag: "us", c1: "rgba(237,30,54,0.48)",   c2: "rgba(255,209,0,0.48)",   c3: "rgba(0,47,108,0.42)",    border: "#ed1e36" },
-  "CF Montréal":            { seed: 8, regPts: 43, flag: "ca", c1: "rgba(0,51,161,0.45)",    c2: "rgba(0,0,0,0.42)",       c3: "rgba(158,162,162,0.40)", border: "#0033a1" },
-  "Atlanta United":         { seed: 9, regPts: 40, flag: "us", c1: "rgba(162,11,42,0.50)",   c2: "rgba(35,31,32,0.48)",    c3: "rgba(199,159,92,0.50)",  border: "#a20b2a" },
-  "LAFC":                   { seed: 1, regPts: 64, flag: "us", c1: "rgba(0,0,0,0.48)",       c2: "rgba(195,158,109,0.55)", c3: "rgba(0,0,0,0.48)",       border: "#c39e6d" },
-  "LA Galaxy":              { seed: 2, regPts: 64, flag: "us", c1: "rgba(0,36,93,0.48)",     c2: "rgba(255,210,0,0.52)",   c3: "rgba(0,36,93,0.48)",     border: "#00245d" },
-  "Real Salt Lake":         { seed: 3, regPts: 59, flag: "us", c1: "rgba(179,8,56,0.48)",    c2: "rgba(1,58,129,0.45)",    c3: "rgba(241,203,0,0.50)",   border: "#b30838" },
-  "Seattle Sounders":       { seed: 4, regPts: 57, flag: "us", c1: "rgba(93,151,65,0.52)",   c2: "rgba(0,85,149,0.45)",    c3: "rgba(93,151,65,0.52)",   border: "#5d9741" },
-  "Houston Dynamo":         { seed: 5, regPts: 54, flag: "us", c1: "rgba(255,107,0,0.52)",   c2: "rgba(16,24,32,0.42)",    c3: "rgba(255,107,0,0.52)",   border: "#ff6b00" },
-  "Minnesota United":       { seed: 6, regPts: 52, flag: "us", c1: "rgba(140,210,244,0.52)", c2: "rgba(35,31,32,0.45)",    c3: "rgba(140,210,244,0.52)", border: "#8cd2f4" },
-  "Colorado Rapids":        { seed: 7, regPts: 50, flag: "us", c1: "rgba(138,36,50,0.48)",   c2: "rgba(138,183,233,0.50)", c3: "rgba(138,36,50,0.48)",   border: "#8a2432" },
-  "Vancouver Whitecaps":    { seed: 8, regPts: 47, flag: "ca", c1: "rgba(0,36,94,0.48)",     c2: "rgba(156,194,234,0.45)", c3: "rgba(0,36,94,0.48)",     border: "#00245e" },
-  "Portland Timbers":       { seed: 9, regPts: 47, flag: "us", c1: "rgba(0,72,43,0.50)",     c2: "rgba(214,154,0,0.50)",   c3: "rgba(0,72,43,0.50)",     border: "#00482b" },
-  "East Wild Card Winner":  { seed: "WC", regPts: 40, flag: "us", c1: "rgba(120,120,120,0.3)", c2: "rgba(180,180,180,0.3)", c3: "rgba(120,120,120,0.3)", border: "#888" },
-  "West Wild Card Winner":  { seed: "WC", regPts: 47, flag: "us", c1: "rgba(120,120,120,0.3)", c2: "rgba(180,180,180,0.3)", c3: "rgba(120,120,120,0.3)", border: "#888" },
+  // Eastern Conference
+  "Nashville SC":           { seed: 1, regPts: 77, flag: "us", c1: "rgba(236,232,58,0.55)",  c2: "rgba(31,22,70,0.48)",    c3: "rgba(236,232,58,0.55)",  border: "#d4cf24" },
+  "Inter Miami":            { seed: 2, regPts: 60, flag: "us", c1: "rgba(247,181,205,0.55)", c2: "rgba(35,31,32,0.45)",    c3: "rgba(247,181,205,0.55)", border: "#f7b5cd" },
+  "New England Revolution": { seed: 3, regPts: 58, flag: "us", c1: "rgba(10,34,64,0.48)",    c2: "rgba(206,14,45,0.50)",   c3: "rgba(10,34,64,0.48)",    border: "#ce0e2d" },
+  "Chicago Fire":           { seed: 4, regPts: 55, flag: "us", c1: "rgba(211,17,69,0.50)",   c2: "rgba(124,205,244,0.52)", c3: "rgba(20,31,70,0.45)",    border: "#d31145" },
+  "Charlotte FC":           { seed: 5, regPts: 54, flag: "us", c1: "rgba(0,133,202,0.48)",   c2: "rgba(16,24,32,0.40)",    c3: "rgba(0,133,202,0.48)",   border: "#0085ca" },
+  "Philadelphia Union":     { seed: 6, regPts: 50, flag: "us", c1: "rgba(7,27,44,0.48)",     c2: "rgba(177,135,45,0.52)",  c3: "rgba(80,145,205,0.45)",  border: "#b1872d" },
+  "Columbus Crew":          { seed: 7, regPts: 47, flag: "us", c1: "rgba(254,209,0,0.55)",   c2: "rgba(0,0,0,0.45)",       c3: "rgba(254,209,0,0.55)",   border: "#e5b800" },
+  "Orlando City":           { seed: 8, regPts: 46, flag: "us", c1: "rgba(99,52,146,0.48)",   c2: "rgba(240,210,131,0.48)", c3: "rgba(99,52,146,0.48)",   border: "#633492" },
+  "FC Cincinnati":          { seed: 9, regPts: 46, flag: "us", c1: "rgba(0,48,135,0.45)",    c2: "rgba(254,80,0,0.50)",    c3: "rgba(0,48,135,0.45)",    border: "#fe5000" },
+  // Western Conference
+  "Vancouver Whitecaps":    { seed: 1, regPts: 64, flag: "ca", c1: "rgba(0,36,94,0.48)",     c2: "rgba(156,194,234,0.45)", c3: "rgba(0,36,94,0.48)",     border: "#00245e" },
+  "FC Dallas":              { seed: 2, regPts: 58, flag: "us", c1: "rgba(232,31,62,0.50)",   c2: "rgba(42,64,118,0.48)",   c3: "rgba(232,31,62,0.50)",   border: "#e81f3e" },
+  "St. Louis CITY SC":      { seed: 3, regPts: 54, flag: "us", c1: "rgba(221,0,74,0.50)",    c2: "rgba(8,27,51,0.48)",     c3: "rgba(221,0,74,0.50)",    border: "#dd004a" },
+  "San Jose Earthquakes":   { seed: 4, regPts: 52, flag: "us", c1: "rgba(0,103,177,0.50)",   c2: "rgba(0,0,0,0.45)",       c3: "rgba(0,103,177,0.50)",   border: "#0067b1" },
+  "Houston Dynamo":         { seed: 5, regPts: 51, flag: "us", c1: "rgba(255,107,0,0.52)",   c2: "rgba(16,24,32,0.42)",    c3: "rgba(255,107,0,0.52)",   border: "#ff6b00" },
+  "LAFC":                   { seed: 6, regPts: 47, flag: "us", c1: "rgba(0,0,0,0.48)",       c2: "rgba(195,158,109,0.55)", c3: "rgba(0,0,0,0.48)",       border: "#c39e6d" },
+  "Portland Timbers":       { seed: 7, regPts: 46, flag: "us", c1: "rgba(0,72,43,0.50)",     c2: "rgba(214,154,0,0.50)",   c3: "rgba(0,72,43,0.50)",     border: "#00482b" },
+  "Seattle Sounders":       { seed: 8, regPts: 46, flag: "us", c1: "rgba(93,151,65,0.52)",   c2: "rgba(0,85,149,0.45)",    c3: "rgba(93,151,65,0.52)",   border: "#5d9741" },
+  "Real Salt Lake":         { seed: 9, regPts: 45, flag: "us", c1: "rgba(179,8,56,0.48)",    c2: "rgba(1,58,129,0.45)",    c3: "rgba(241,203,0,0.50)",   border: "#b30838" },
+  // Wild Card Placeholders
+  "East Wild Card Winner":  { seed: "WC", regPts: 46, flag: "us", c1: "rgba(120,120,120,0.3)", c2: "rgba(180,180,180,0.3)", c3: "rgba(120,120,120,0.3)", border: "#888" },
+  "West Wild Card Winner":  { seed: "WC", regPts: 45, flag: "us", c1: "rgba(120,120,120,0.3)", c2: "rgba(180,180,180,0.3)", c3: "rgba(120,120,120,0.3)", border: "#888" },
 };
 
 // ── 3. THEMES (FSF Peach-Orange & Near-Black Default) ────────────────────────

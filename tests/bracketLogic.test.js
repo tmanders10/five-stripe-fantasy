@@ -63,22 +63,22 @@ describe("Stage 1 Wild Card cascade & Round 1 series logic", () => {
     const eS1G2 = ALL_GROUP_MATCHES.find((m) => m.matchId === "E_S1_G2");
 
     // Unpicked & no result -> placeholder remains
-    assert.deepEqual(getResolvedMatchTeams(eS1G1, {}, {}), ["Inter Miami", "East Wild Card Winner"]);
+    assert.deepEqual(getResolvedMatchTeams(eS1G1, {}, {}), ["Nashville SC", "East Wild Card Winner"]);
 
-    // User picked Atlanta United (team2 in WC_E)
+    // User picked FC Cincinnati (team2 in WC_E)
     assert.deepEqual(
       getResolvedMatchTeams(eS1G1, { WC_E: "team2" }, {}),
-      ["Inter Miami", "Atlanta United"]
+      ["Nashville SC", "FC Cincinnati"]
     );
     assert.deepEqual(
       getResolvedMatchTeams(eS1G2, { WC_E: "team2" }, {}),
-      ["Atlanta United", "Inter Miami"]
+      ["FC Cincinnati", "Nashville SC"]
     );
 
-    // Official WC_E result (CF Montréal / team1) overrides user pick
+    // Official WC_E result (Orlando City / team1) overrides user pick
     assert.deepEqual(
       getResolvedMatchTeams(eS1G1, { WC_E: "team2" }, { WC_E: { result: "team1" } }),
-      ["Inter Miami", "CF Montréal"]
+      ["Nashville SC", "Orlando City"]
     );
   });
 
@@ -102,16 +102,16 @@ describe("Stage 1 Wild Card cascade & Round 1 series logic", () => {
         E_S2_G3: "team2", // stray G3 pick should not corrupt 2-0 sweep
       })
     );
-    assert.deepEqual(sweepOutcome, { winner: "Columbus Crew", length: "2-0", needsGame3: false });
+    assert.deepEqual(sweepOutcome, { winner: "Inter Miami", length: "2-0", needsGame3: false });
 
     const threeGameUpset = deriveSeriesOutcome(
       calcSeriesWins("E_S2", {
-        E_S2_G1: "team1", // Columbus 1
-        E_S2_G2: "team1", // NYRB 1 (lower seed hosts G2)
-        E_S2_G3: "team2", // NYRB wins away in G3
+        E_S2_G1: "team1", // Inter Miami 1
+        E_S2_G2: "team1", // Columbus Crew 1 (lower seed hosts G2)
+        E_S2_G3: "team2", // Columbus Crew wins away in G3
       })
     );
-    assert.deepEqual(threeGameUpset, { winner: "NY Red Bulls", length: "2-1", needsGame3: true });
+    assert.deepEqual(threeGameUpset, { winner: "Columbus Crew", length: "2-1", needsGame3: true });
 
     const tiedAtOne = deriveSeriesOutcome(
       calcSeriesWins("E_S2", { E_S2_G1: "team1", E_S2_G2: "team1" })
@@ -129,9 +129,9 @@ describe("Stage 1 Wild Card cascade & Round 1 series logic", () => {
       { match_id: "E_S3_G2", pick: "team2" },   // +0 (actual went 3 games)
     ];
     const groupPicks = [
-      { group_code: "E_S2", first_place: "Columbus Crew", second_place: "2-0" }, // +3 +1 = +4
-      { group_code: "E_S3", first_place: "FC Cincinnati", second_place: "2-0" }, // +3 +0 (actual 2-1)
-      { group_code: "E_S4", first_place: "Charlotte FC", second_place: "2-0" },  // +0 winner wrong (no length bonus even though actual 2-0!)
+      { group_code: "E_S2", first_place: "Inter Miami", second_place: "2-0" },           // +3 +1 = +4
+      { group_code: "E_S3", first_place: "New England Revolution", second_place: "2-0" }, // +3 +0 (actual 2-1)
+      { group_code: "E_S4", first_place: "Charlotte FC", second_place: "2-0" },          // +0 winner wrong (no length bonus even though actual 2-0!)
     ];
     const results = [
       { match_id: "WC_E", result: "team2" },
@@ -143,9 +143,9 @@ describe("Stage 1 Wild Card cascade & Round 1 series logic", () => {
       { match_id: "E_S3_G3", result: "team1" },
     ];
     const standings = [
-      { group_code: "E_S2", first_place: "Columbus Crew", second_place: "2-0" },
-      { group_code: "E_S3", first_place: "FC Cincinnati", second_place: "2-1" },
-      { group_code: "E_S4", first_place: "Orlando City", second_place: "2-0" },
+      { group_code: "E_S2", first_place: "Inter Miami", second_place: "2-0" },
+      { group_code: "E_S3", first_place: "New England Revolution", second_place: "2-1" },
+      { group_code: "E_S4", first_place: "Chicago Fire", second_place: "2-0" },
     ];
 
     const res = calcStage1Score(matchPicks, groupPicks, results, standings);
@@ -164,20 +164,20 @@ describe("Stage 1 Wild Card cascade & Round 1 series logic", () => {
 describe("Stage 2 Final 8 Bracket selection & scoring", () => {
   const sampleBracket = buildKnockoutBracketSlots(
     [
-      { match_id: "CSF_1", stage: "CSF", team1: "Inter Miami", team2: "Orlando City" },
-      { match_id: "CSF_2", stage: "CSF", team1: "Columbus Crew", team2: "FC Cincinnati" },
-      { match_id: "CSF_3", stage: "CSF", team1: "LAFC", team2: "Seattle Sounders" },
-      { match_id: "CSF_4", stage: "CSF", team1: "LA Galaxy", team2: "Real Salt Lake" },
+      { match_id: "CSF_1", stage: "CSF", team1: "Nashville SC", team2: "Chicago Fire" },
+      { match_id: "CSF_2", stage: "CSF", team1: "Inter Miami", team2: "New England Revolution" },
+      { match_id: "CSF_3", stage: "CSF", team1: "Vancouver Whitecaps", team2: "San Jose Earthquakes" },
+      { match_id: "CSF_4", stage: "CSF", team1: "FC Dallas", team2: "St. Louis CITY SC" },
     ],
     []
   );
 
   it("populates CSF teams from match_results or falls back to group_standings", () => {
     const standingsOnly = [
-      { group_code: "E_S1", first_place: "Inter Miami" },
+      { group_code: "E_S1", first_place: "Nashville SC" },
       { group_code: "E_S4", first_place: "Charlotte FC" },
-      { group_code: "W_S1", first_place: "LAFC" },
-      { group_code: "W_S4", first_place: "Seattle Sounders" },
+      { group_code: "W_S1", first_place: "Vancouver Whitecaps" },
+      { group_code: "W_S4", first_place: "San Jose Earthquakes" },
     ];
     const slots = buildKnockoutBracketSlots([], standingsOnly);
     assert.equal(slots.length, 7);
@@ -187,68 +187,68 @@ describe("Stage 2 Final 8 Bracket selection & scoring", () => {
         slotId: "CSF_1",
         round: "CSF",
         label: "East Semifinal 1 (#1/WC vs #4/5)",
-        team1: "Inter Miami",
+        team1: "Nashville SC",
         team2: "Charlotte FC",
       }
     );
-    assert.deepEqual(getStage2SlotTeams("CSF_3", {}, slots), ["LAFC", "Seattle Sounders"]);
-    assert.deepEqual(getStage2SlotTeams("CF_1", { CSF_1: "Inter Miami" }, slots), ["Inter Miami", null]);
+    assert.deepEqual(getStage2SlotTeams("CSF_3", {}, slots), ["Vancouver Whitecaps", "San Jose Earthquakes"]);
+    assert.deepEqual(getStage2SlotTeams("CF_1", { CSF_1: "Nashville SC" }, slots), ["Nashville SC", null]);
   });
 
   it("cascades downstream clears when changing an upstream pick only if invalidated", () => {
     let picks = {};
-    picks = applyStage2Pick(picks, "CSF_1", "Inter Miami").nextPicks;
-    picks = applyStage2Pick(picks, "CSF_2", "Columbus Crew").nextPicks;
-    picks = applyStage2Pick(picks, "CSF_3", "LAFC").nextPicks;
-    picks = applyStage2Pick(picks, "CSF_4", "LA Galaxy").nextPicks;
-    picks = applyStage2Pick(picks, "CF_1", "Inter Miami").nextPicks;
-    picks = applyStage2Pick(picks, "CF_2", "LAFC").nextPicks;
-    picks = applyStage2Pick(picks, "CUP_1", "Inter Miami").nextPicks;
+    picks = applyStage2Pick(picks, "CSF_1", "Nashville SC").nextPicks;
+    picks = applyStage2Pick(picks, "CSF_2", "Inter Miami").nextPicks;
+    picks = applyStage2Pick(picks, "CSF_3", "Vancouver Whitecaps").nextPicks;
+    picks = applyStage2Pick(picks, "CSF_4", "FC Dallas").nextPicks;
+    picks = applyStage2Pick(picks, "CF_1", "Nashville SC").nextPicks;
+    picks = applyStage2Pick(picks, "CF_2", "Vancouver Whitecaps").nextPicks;
+    picks = applyStage2Pick(picks, "CUP_1", "Nashville SC").nextPicks;
 
     // Changing CSF_1 invalidates CF_1 AND CUP_1
-    const changedInvalid = applyStage2Pick(picks, "CSF_1", "Orlando City");
+    const changedInvalid = applyStage2Pick(picks, "CSF_1", "Chicago Fire");
     assert.deepEqual(changedInvalid.changedSlots, ["CSF_1", "CF_1", "CUP_1"]);
     assert.equal(changedInvalid.nextPicks.CF_1, "");
     assert.equal(changedInvalid.nextPicks.CUP_1, "");
-    assert.equal(changedInvalid.nextPicks.CF_2, "LAFC");
+    assert.equal(changedInvalid.nextPicks.CF_2, "Vancouver Whitecaps");
 
-    // Changing CSF_2 keeps CF_1 ("Inter Miami") and CUP_1 ("Inter Miami") intact
-    const changedValid = applyStage2Pick(picks, "CSF_2", "FC Cincinnati");
+    // Changing CSF_2 keeps CF_1 ("Nashville SC") and CUP_1 ("Nashville SC") intact
+    const changedValid = applyStage2Pick(picks, "CSF_2", "New England Revolution");
     assert.deepEqual(changedValid.changedSlots, ["CSF_2"]);
-    assert.equal(changedValid.nextPicks.CF_1, "Inter Miami");
-    assert.equal(changedValid.nextPicks.CUP_1, "Inter Miami");
+    assert.equal(changedValid.nextPicks.CF_1, "Nashville SC");
+    assert.equal(changedValid.nextPicks.CUP_1, "Nashville SC");
   });
 
   it("preserves user selections and locks decided slots when official results arrive", () => {
     const userPicks = {
-      CSF_1: "Inter Miami",
-      CSF_2: "Columbus Crew",
-      CSF_3: "LAFC",
-      CSF_4: "LA Galaxy",
-      CF_1: "Inter Miami",
-      CF_2: "LAFC",
-      CUP_1: "Inter Miami",
+      CSF_1: "Nashville SC",
+      CSF_2: "Inter Miami",
+      CSF_3: "Vancouver Whitecaps",
+      CSF_4: "FC Dallas",
+      CF_1: "Nashville SC",
+      CF_2: "Vancouver Whitecaps",
+      CUP_1: "Nashville SC",
     };
 
     const koResults = {
-      CSF_1: { team1: "Inter Miami", team2: "Orlando City", result: "team2" }, // Orlando upset
-      CSF_2: { team1: "Columbus Crew", team2: "FC Cincinnati", result: "team1" }, // Columbus wins
-      CF_1: { team1: "Orlando City", team2: "Columbus Crew", result: "team1" }, // Diverged matchup!
-      CF_2: { team1: "LAFC", team2: "", result: null }, // Populated by CSF_3, not yet played
+      CSF_1: { team1: "Nashville SC", team2: "Chicago Fire", result: "team2" }, // Chicago upset
+      CSF_2: { team1: "Inter Miami", team2: "New England Revolution", result: "team1" }, // Miami wins
+      CF_1: { team1: "Chicago Fire", team2: "Inter Miami", result: "team1" }, // Diverged matchup!
+      CF_2: { team1: "Vancouver Whitecaps", team2: "", result: null }, // Populated by CSF_3, not yet played
     };
 
-    // CSF_1: wrong pick -> user's pick preserved, Inter Miami marked wrong, Orlando marked winner, read-only
+    // CSF_1: wrong pick -> user's pick preserved, Nashville marked wrong, Chicago marked winner, read-only
     const csf1 = getStage2SlotDisplayState("CSF_1", userPicks, koResults, sampleBracket, false);
-    assert.equal(csf1.picked, "Inter Miami");
+    assert.equal(csf1.picked, "Nashville SC");
     assert.equal(csf1.hasResult, true);
     assert.equal(csf1.userCorrect, false);
     assert.equal(csf1.t1State, "wrong");
     assert.equal(csf1.t2State, "winner");
     assert.equal(csf1.isReadOnly, true);
 
-    // CSF_2: correct pick -> user's pick preserved, Columbus marked correct, read-only
+    // CSF_2: correct pick -> user's pick preserved, Inter Miami marked correct, read-only
     const csf2 = getStage2SlotDisplayState("CSF_2", userPicks, koResults, sampleBracket, false);
-    assert.equal(csf2.picked, "Columbus Crew");
+    assert.equal(csf2.picked, "Inter Miami");
     assert.equal(csf2.userCorrect, true);
     assert.equal(csf2.t1State, "correct");
     assert.equal(csf2.t2State, null);
@@ -256,47 +256,47 @@ describe("Stage 2 Final 8 Bracket selection & scoring", () => {
 
     // CSF_3: no result yet -> still editable & pick preserved
     const csf3 = getStage2SlotDisplayState("CSF_3", userPicks, koResults, sampleBracket, false);
-    assert.equal(csf3.picked, "LAFC");
+    assert.equal(csf3.picked, "Vancouver Whitecaps");
     assert.equal(csf3.hasResult, false);
     assert.equal(csf3.isReadOnly, false);
 
-    // CF_1: diverged matchup -> Inter Miami marked wrong, actualWinner still Orlando City
+    // CF_1: diverged matchup -> Nashville marked wrong, actualWinner still Chicago Fire
     const cf1 = getStage2SlotDisplayState("CF_1", userPicks, koResults, sampleBracket, false);
-    assert.equal(cf1.picked, "Inter Miami");
+    assert.equal(cf1.picked, "Nashville SC");
     assert.equal(cf1.userCorrect, false);
     assert.equal(cf1.t1State, "wrong");
     assert.equal(cf1.t2State, null);
-    assert.equal(cf1.actualWinner, "Orlando City");
+    assert.equal(cf1.actualWinner, "Chicago Fire");
     assert.equal(cf1.isReadOnly, true);
 
     // CF_2: admin row exists with result: null -> user's predicted matchup & pick remain editable
     const cf2 = getStage2SlotDisplayState("CF_2", userPicks, koResults, sampleBracket, false);
     assert.equal(cf2.hasResult, false);
-    assert.equal(cf2.picked, "LAFC");
-    assert.equal(cf2.t1, "LAFC");
-    assert.equal(cf2.t2, "LA Galaxy");
+    assert.equal(cf2.picked, "Vancouver Whitecaps");
+    assert.equal(cf2.t1, "Vancouver Whitecaps");
+    assert.equal(cf2.t2, "FC Dallas");
     assert.equal(cf2.isReadOnly, false);
   });
 
   it("scores Stage 2 picks accurately (CSF +4, CF +8, CUP +12)", () => {
     assert.equal(SCORING_RULES.STAGE2.CUP, 12);
     const picks = [
-      { slot_id: "CSF_1", round: "CSF", picked_team: "Inter Miami" },   // wrong
-      { slot_id: "CSF_2", round: "CSF", picked_team: "Columbus Crew" }, // +4
-      { slot_id: "CSF_3", round: "CSF", picked_team: "LAFC" },          // +4
-      { slot_id: "CSF_4", round: "CSF", picked_team: "LA Galaxy" },     // +4
-      { slot_id: "CF_1", picked_team: "Columbus Crew" },                // +8 (fallback round parsing)
-      { slot_id: "CF_2", round: "CF", picked_team: "LAFC" },            // +8
-      { slot_id: "CUP_1", round: "CUP", picked_team: "LAFC" },          // +12
+      { slot_id: "CSF_1", round: "CSF", picked_team: "Nashville SC" },          // wrong
+      { slot_id: "CSF_2", round: "CSF", picked_team: "Inter Miami" },           // +4
+      { slot_id: "CSF_3", round: "CSF", picked_team: "Vancouver Whitecaps" },   // +4
+      { slot_id: "CSF_4", round: "CSF", picked_team: "FC Dallas" },             // +4
+      { slot_id: "CF_1", picked_team: "Inter Miami" },                          // +8 (fallback round parsing)
+      { slot_id: "CF_2", round: "CF", picked_team: "Vancouver Whitecaps" },     // +8
+      { slot_id: "CUP_1", round: "CUP", picked_team: "Vancouver Whitecaps" },   // +12
     ];
     const results = [
-      { match_id: "CSF_1", team1: "Inter Miami", team2: "Orlando City", result: "team2" },
-      { match_id: "CSF_2", team1: "Columbus Crew", team2: "FC Cincinnati", result: "team1" },
-      { match_id: "CSF_3", team1: "LAFC", team2: "Seattle Sounders", result: "team1" },
-      { match_id: "CSF_4", team1: "LA Galaxy", team2: "Real Salt Lake", result: "team1" },
-      { match_id: "CF_1", team1: "Orlando City", team2: "Columbus Crew", result: "team2" },
-      { match_id: "CF_2", team1: "LAFC", team2: "LA Galaxy", result: "team1" },
-      { match_id: "CUP_1", team1: "Columbus Crew", team2: "LAFC", result: "team2" },
+      { match_id: "CSF_1", team1: "Nashville SC", team2: "Chicago Fire", result: "team2" },
+      { match_id: "CSF_2", team1: "Inter Miami", team2: "New England Revolution", result: "team1" },
+      { match_id: "CSF_3", team1: "Vancouver Whitecaps", team2: "San Jose Earthquakes", result: "team1" },
+      { match_id: "CSF_4", team1: "FC Dallas", team2: "St. Louis CITY SC", result: "team1" },
+      { match_id: "CF_1", team1: "Chicago Fire", team2: "Inter Miami", result: "team2" },
+      { match_id: "CF_2", team1: "Vancouver Whitecaps", team2: "FC Dallas", result: "team1" },
+      { match_id: "CUP_1", team1: "Inter Miami", team2: "Vancouver Whitecaps", result: "team2" },
     ];
     assert.deepEqual(calcStage2Score(picks, results), { score: 4 + 4 + 4 + 8 + 8 + 12, correct: 6 });
   });
@@ -306,8 +306,8 @@ describe("Stage 2 Final 8 Bracket selection & scoring", () => {
 describe("Admin CSF auto-fill and bracket cascade", () => {
   it("auto-fills CSF_1..4 progressively from group_standings without touching unclinched slots", () => {
     const partialStandings = [
-      { group_code: "E_S1", first_place: "Inter Miami" },
-      { group_code: "E_S4", first_place: "Orlando City" },
+      { group_code: "E_S1", first_place: "Nashville SC" },
+      { group_code: "E_S4", first_place: "Chicago Fire" },
     ];
     const { nextBracket, changedRows } = computeCSFUpdates(partialStandings, []);
     assert.equal(changedRows.length, 4);
@@ -315,8 +315,8 @@ describe("Admin CSF auto-fill and bracket cascade", () => {
     assert.deepEqual(csf1, {
       match_id: "CSF_1",
       stage: "CSF",
-      team1: "Inter Miami",
-      team2: "Orlando City",
+      team1: "Nashville SC",
+      team2: "Chicago Fire",
       result: null,
     });
     const csf2 = nextBracket.find((b) => b.match_id === "CSF_2");
@@ -330,31 +330,31 @@ describe("Admin CSF auto-fill and bracket cascade", () => {
 
   it("preserves CSF results when teams do not change and cascades clears when Round 1 winner changes", () => {
     const standings = [
-      { group_code: "E_S1", first_place: "Inter Miami" },
-      { group_code: "E_S4", first_place: "Orlando City" },
-      { group_code: "E_S2", first_place: "Columbus Crew" },
-      { group_code: "E_S3", first_place: "FC Cincinnati" },
+      { group_code: "E_S1", first_place: "Nashville SC" },
+      { group_code: "E_S4", first_place: "Chicago Fire" },
+      { group_code: "E_S2", first_place: "Inter Miami" },
+      { group_code: "E_S3", first_place: "New England Revolution" },
     ];
     const bracket = [
-      { match_id: "CSF_1", stage: "CSF", team1: "Inter Miami", team2: "Orlando City", result: "team1" },
-      { match_id: "CSF_2", stage: "CSF", team1: "Columbus Crew", team2: "FC Cincinnati", result: "team1" },
+      { match_id: "CSF_1", stage: "CSF", team1: "Nashville SC", team2: "Chicago Fire", result: "team1" },
+      { match_id: "CSF_2", stage: "CSF", team1: "Inter Miami", team2: "New England Revolution", result: "team1" },
       { match_id: "CSF_3", stage: "CSF", team1: "", team2: "", result: null },
       { match_id: "CSF_4", stage: "CSF", team1: "", team2: "", result: null },
-      { match_id: "CF_1", stage: "CF", team1: "Inter Miami", team2: "Columbus Crew", result: "team1" },
-      { match_id: "CUP_1", stage: "CUP", team1: "Inter Miami", team2: "", result: "team1" },
+      { match_id: "CF_1", stage: "CF", team1: "Nashville SC", team2: "Inter Miami", result: "team1" },
+      { match_id: "CUP_1", stage: "CUP", team1: "Nashville SC", team2: "", result: "team1" },
     ];
 
     // Unchanged standings preserve CSF_1 result
     const same = computeCSFUpdates(standings, bracket, { force: true });
     assert.equal(same.nextBracket.find((b) => b.match_id === "CSF_1").result, "team1");
 
-    // E_S1 changes to Atlanta United -> resets CSF_1, CF_1, CUP_1
+    // E_S1 changes to FC Cincinnati -> resets CSF_1, CF_1, CUP_1
     const updatedStandings = standings.map((s) =>
-      s.group_code === "E_S1" ? { group_code: "E_S1", first_place: "Atlanta United" } : s
+      s.group_code === "E_S1" ? { group_code: "E_S1", first_place: "FC Cincinnati" } : s
     );
     const changed = computeCSFUpdates(updatedStandings, bracket);
     const nextMap = Object.fromEntries(changed.nextBracket.map((b) => [b.match_id, b]));
-    assert.equal(nextMap.CSF_1.team1, "Atlanta United");
+    assert.equal(nextMap.CSF_1.team1, "FC Cincinnati");
     assert.equal(nextMap.CSF_1.result, null);
     assert.equal(nextMap.CF_1.team1, "");
     assert.equal(nextMap.CF_1.result, null);
@@ -366,20 +366,20 @@ describe("Admin CSF auto-fill and bracket cascade", () => {
 
   it("cascades Stage 2 admin results CSF -> CF -> CUP and clears downstream on toggle", () => {
     const map = {
-      CSF_1: { match_id: "CSF_1", stage: "CSF", team1: "Inter Miami", team2: "Orlando City", result: "team1" },
-      CSF_2: { match_id: "CSF_2", stage: "CSF", team1: "Columbus Crew", team2: "FC Cincinnati", result: "team1" },
-      CSF_3: { match_id: "CSF_3", stage: "CSF", team1: "LAFC", team2: "Seattle Sounders", result: "team1" },
-      CSF_4: { match_id: "CSF_4", stage: "CSF", team1: "LA Galaxy", team2: "Real Salt Lake", result: "team2" },
+      CSF_1: { match_id: "CSF_1", stage: "CSF", team1: "Nashville SC", team2: "Chicago Fire", result: "team1" },
+      CSF_2: { match_id: "CSF_2", stage: "CSF", team1: "Inter Miami", team2: "New England Revolution", result: "team1" },
+      CSF_3: { match_id: "CSF_3", stage: "CSF", team1: "Vancouver Whitecaps", team2: "San Jose Earthquakes", result: "team1" },
+      CSF_4: { match_id: "CSF_4", stage: "CSF", team1: "FC Dallas", team2: "St. Louis CITY SC", result: "team2" },
     };
 
-    computeBracketCascade(map, "CSF_1", "Inter Miami");
-    computeBracketCascade(map, "CSF_2", "Columbus Crew");
-    assert.equal(map.CF_1.team1, "Inter Miami");
-    assert.equal(map.CF_1.team2, "Columbus Crew");
+    computeBracketCascade(map, "CSF_1", "Nashville SC");
+    computeBracketCascade(map, "CSF_2", "Inter Miami");
+    assert.equal(map.CF_1.team1, "Nashville SC");
+    assert.equal(map.CF_1.team2, "Inter Miami");
 
     map.CF_1.result = "team1";
-    computeBracketCascade(map, "CF_1", "Inter Miami");
-    assert.equal(map.CUP_1.team1, "Inter Miami");
+    computeBracketCascade(map, "CF_1", "Nashville SC");
+    assert.equal(map.CUP_1.team1, "Nashville SC");
 
     map.CUP_1.result = "team1";
 
@@ -387,7 +387,7 @@ describe("Admin CSF auto-fill and bracket cascade", () => {
     map.CSF_1.result = null;
     computeBracketCascade(map, "CSF_1", "");
     assert.equal(map.CF_1.team1, "");
-    assert.equal(map.CF_1.team2, "Columbus Crew");
+    assert.equal(map.CF_1.team2, "Inter Miami");
     assert.equal(map.CF_1.result, null);
     assert.equal(map.CUP_1.team1, "");
     assert.equal(map.CUP_1.result, null);
@@ -430,8 +430,8 @@ describe("End-to-end smoke test: Stage 1 -> Auto-fill CSF -> User Stage 2 Picks 
     };
 
     // Step 1: Admin enters Wild Cards + all 8 Round 1 series (higher seeds sweep)
-    recordStage1("WC_E", "team1"); // CF Montréal
-    recordStage1("WC_W", "team2"); // Portland Timbers
+    recordStage1("WC_E", "team1"); // Orlando City
+    recordStage1("WC_W", "team2"); // Real Salt Lake
     for (const sId of Object.keys(GROUPS)) {
       recordStage1(`${sId}_G1`, "team1");
       recordStage1(`${sId}_G2`, "team2");
@@ -442,10 +442,10 @@ describe("End-to-end smoke test: Stage 1 -> Auto-fill CSF -> User Stage 2 Picks 
       db.match_results.filter((r) => ["CSF", "CF", "CUP"].includes(r.stage)),
       db.group_standings
     );
-    assert.deepEqual(getStage2SlotTeams("CSF_1", {}, knockoutBracket), ["Inter Miami", "Orlando City"]);
-    assert.deepEqual(getStage2SlotTeams("CSF_2", {}, knockoutBracket), ["Columbus Crew", "FC Cincinnati"]);
-    assert.deepEqual(getStage2SlotTeams("CSF_3", {}, knockoutBracket), ["LAFC", "Seattle Sounders"]);
-    assert.deepEqual(getStage2SlotTeams("CSF_4", {}, knockoutBracket), ["LA Galaxy", "Real Salt Lake"]);
+    assert.deepEqual(getStage2SlotTeams("CSF_1", {}, knockoutBracket), ["Nashville SC", "Chicago Fire"]);
+    assert.deepEqual(getStage2SlotTeams("CSF_2", {}, knockoutBracket), ["Inter Miami", "New England Revolution"]);
+    assert.deepEqual(getStage2SlotTeams("CSF_3", {}, knockoutBracket), ["Vancouver Whitecaps", "San Jose Earthquakes"]);
+    assert.deepEqual(getStage2SlotTeams("CSF_4", {}, knockoutBracket), ["FC Dallas", "St. Louis CITY SC"]);
 
     // Step 2: User makes all 7 Stage 2 picks (auto-saved on each click)
     const userId = "user-123";
@@ -467,13 +467,13 @@ describe("End-to-end smoke test: Stage 1 -> Auto-fill CSF -> User Stage 2 Picks 
       }
     };
 
-    userClickPick("CSF_1", "Inter Miami");
-    userClickPick("CSF_2", "Columbus Crew");
-    userClickPick("CSF_3", "LAFC");
-    userClickPick("CSF_4", "LA Galaxy");
-    userClickPick("CF_1", "Inter Miami");
-    userClickPick("CF_2", "LAFC");
-    userClickPick("CUP_1", "Inter Miami");
+    userClickPick("CSF_1", "Nashville SC");
+    userClickPick("CSF_2", "Inter Miami");
+    userClickPick("CSF_3", "Vancouver Whitecaps");
+    userClickPick("CSF_4", "FC Dallas");
+    userClickPick("CF_1", "Nashville SC");
+    userClickPick("CF_2", "Vancouver Whitecaps");
+    userClickPick("CUP_1", "Nashville SC");
 
     assert.equal(db.stage2_picks.length, 7);
 
@@ -490,24 +490,24 @@ describe("End-to-end smoke test: Stage 1 -> Auto-fill CSF -> User Stage 2 Picks 
       downRows.forEach((dr) => upsertRow("match_results", dr, (r) => r.match_id));
     };
 
-    recordStage2("CSF_1", "CSF", "team2", "Inter Miami", "Orlando City");   // Orlando upsets Miami
-    recordStage2("CSF_2", "CSF", "team1", "Columbus Crew", "FC Cincinnati"); // Columbus wins
-    recordStage2("CSF_3", "CSF", "team1", "LAFC", "Seattle Sounders");       // LAFC wins
-    recordStage2("CSF_4", "CSF", "team1", "LA Galaxy", "Real Salt Lake");    // LA Galaxy wins
-    recordStage2("CF_1", "CF", "team2", "Orlando City", "Columbus Crew");    // Columbus wins East
-    recordStage2("CF_2", "CF", "team1", "LAFC", "LA Galaxy");                // LAFC wins West
-    recordStage2("CUP_1", "CUP", "team1", "Columbus Crew", "LAFC");          // Columbus wins MLS Cup
+    recordStage2("CSF_1", "CSF", "team2", "Nashville SC", "Chicago Fire");              // Chicago upsets Nashville
+    recordStage2("CSF_2", "CSF", "team1", "Inter Miami", "New England Revolution");     // Miami wins
+    recordStage2("CSF_3", "CSF", "team1", "Vancouver Whitecaps", "San Jose Earthquakes"); // Vancouver wins
+    recordStage2("CSF_4", "CSF", "team1", "FC Dallas", "St. Louis CITY SC");            // FC Dallas wins
+    recordStage2("CF_1", "CF", "team2", "Chicago Fire", "Inter Miami");                 // Miami wins East
+    recordStage2("CF_2", "CF", "team1", "Vancouver Whitecaps", "FC Dallas");            // Vancouver wins West
+    recordStage2("CUP_1", "CUP", "team1", "Inter Miami", "Vancouver Whitecaps");        // Miami wins MLS Cup
 
     // Step 4: Verify user's 7 Stage 2 selections were NOT wiped from DB or UI state
     assert.equal(db.stage2_picks.length, 7);
     assert.deepEqual(userPicksState, {
-      CSF_1: "Inter Miami",
-      CSF_2: "Columbus Crew",
-      CSF_3: "LAFC",
-      CSF_4: "LA Galaxy",
-      CF_1: "Inter Miami",
-      CF_2: "LAFC",
-      CUP_1: "Inter Miami",
+      CSF_1: "Nashville SC",
+      CSF_2: "Inter Miami",
+      CSF_3: "Vancouver Whitecaps",
+      CSF_4: "FC Dallas",
+      CF_1: "Nashville SC",
+      CF_2: "Vancouver Whitecaps",
+      CUP_1: "Nashville SC",
     });
 
     const koResultsCache = db.match_results.filter((r) => ["CSF", "CF", "CUP"].includes(r.stage));
@@ -515,13 +515,13 @@ describe("End-to-end smoke test: Stage 1 -> Auto-fill CSF -> User Stage 2 Picks 
 
     // Display state keeps user's picks and grades accurately
     const cupDisplay = getStage2SlotDisplayState("CUP_1", userPicksState, koResultsMap, knockoutBracket, false);
-    assert.equal(cupDisplay.picked, "Inter Miami");
+    assert.equal(cupDisplay.picked, "Nashville SC");
     assert.equal(cupDisplay.userCorrect, false);
-    assert.equal(cupDisplay.actualWinner, "Columbus Crew");
+    assert.equal(cupDisplay.actualWinner, "Inter Miami");
     assert.equal(cupDisplay.isReadOnly, true);
 
     const cf2Display = getStage2SlotDisplayState("CF_2", userPicksState, koResultsMap, knockoutBracket, false);
-    assert.equal(cf2Display.picked, "LAFC");
+    assert.equal(cf2Display.picked, "Vancouver Whitecaps");
     assert.equal(cf2Display.userCorrect, true);
     assert.equal(cf2Display.t1State, "correct");
     assert.equal(cf2Display.isReadOnly, true);
@@ -571,8 +571,8 @@ describe("User pick completeness reporting (calcUserPickProgress)", () => {
     const complete = calcUserPickProgress({
       userMatchPicks: fullSweepPicks,
       userStage2Picks: [
-        { slot_id: "CSF_1", picked_team: "Inter Miami" },
-        { slot_id: "CUP_1", picked_team: "LAFC" },
+        { slot_id: "CSF_1", picked_team: "Nashville SC" },
+        { slot_id: "CUP_1", picked_team: "Vancouver Whitecaps" },
       ],
     });
     assert.equal(complete.stage1.status, "complete");
@@ -586,7 +586,7 @@ describe("User pick completeness reporting (calcUserPickProgress)", () => {
     assert.equal(complete.stage2.done, 2);
     assert.equal(complete.stage2.total, 7);
     assert.equal(complete.stage2.pct, 29);
-    assert.equal(complete.stage2.championPick, "LAFC");
+    assert.equal(complete.stage2.championPick, "Vancouver Whitecaps");
   });
 });
 
