@@ -676,7 +676,7 @@ function AuthScreen({ registrationOpen = true, onProfileSynced }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
-  const [inviteCode, setInviteCode] = useState("mls26");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showGuide, setShowGuide] = useState(false);
@@ -690,7 +690,7 @@ function AuthScreen({ registrationOpen = true, onProfileSynced }) {
         if (!inviteCode.trim()) throw new Error("An invite code is required to create an account.");
         const { data: league, error: le } = await supabase
           .from("leagues").select("id,name").eq("invite_code", inviteCode.trim().toLowerCase()).single();
-        if (le || !league) throw new Error("Invalid invite code. Default code is: mls26");
+        if (le || !league) throw new Error("Invalid invite code. Please check with your league organizer.");
         const { data: authData, error: e } = await supabase.auth.signUp({
           email, password: pass, options: { data: { display_name: name.trim(), league_id: league.id } }
         });
@@ -743,7 +743,7 @@ function AuthScreen({ registrationOpen = true, onProfileSynced }) {
               </div>
               <div style={{ marginBottom: "1rem" }}>
                 <label style={styles.label}>League Invite Code</label>
-                <input style={styles.input} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} placeholder="mls26" />
+                <input style={styles.input} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} placeholder="Enter league invite code" />
               </div>
             </>
           )}
